@@ -2,11 +2,11 @@
 
 /**
  * Plugin Name: Quiz IA Pro
- * Plugin URI: https://quiz-ia-pro.com
+ * Plugin URI: https://github.com/SohailPro12/quiz-ai
  * Description: Plateforme intelligente de génération et gestion de quiz avec IA
  * Version: 1.0.0
- * Author: Quiz IA Pro Team
- * Author URI: https://quiz-ia-pro.com
+ * Author: Sohail Charef
+ * Author URI: https://github.com/SohailPro12/
  * License: GPL v2 or later
  * Text Domain: quiz-ia-pro
  * Domain Path: /languages
