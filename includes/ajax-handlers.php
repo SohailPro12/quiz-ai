@@ -1,3 +1,5 @@
+
+
 <?php
 // Prevent direct access
 if (!defined('ABSPATH')) {
@@ -91,6 +93,27 @@ class QuizGeneratorAjax
         // Frontend quiz contact form action (others are in frontend-functions.php)
         add_action('wp_ajax_submit_quiz_contact_form', [$this, 'handle_submit_quiz_contact_form']);
         add_action('wp_ajax_nopriv_submit_quiz_contact_form', [$this, 'handle_submit_quiz_contact_form']);
+
+        // Increment quiz views action
+        add_action('wp_ajax_quiz_ai_pro_increment_quiz_views', [$this, 'handle_increment_quiz_views']);
+        add_action('wp_ajax_nopriv_quiz_ai_pro_increment_quiz_views', [$this, 'handle_increment_quiz_views']);
+    }
+    /**
+     * AJAX handler to increment quiz views
+     */
+    public function handle_increment_quiz_views()
+    {
+        if (!isset($_POST['quiz_id'])) {
+            wp_send_json_error('Missing quiz_id');
+            return;
+        }
+        $quiz_id = intval($_POST['quiz_id']);
+        if ($quiz_id > 0 && function_exists('quiz_ai_pro_increment_quiz_views')) {
+            quiz_ai_pro_increment_quiz_views($quiz_id);
+            wp_send_json_success('View incremented');
+        } else {
+            wp_send_json_error('Invalid quiz_id');
+        }
     }
 
     /**
@@ -440,6 +463,8 @@ class QuizGeneratorAjax
             wp_send_json_error('An unexpected error occurred: ' . $e->getMessage());
         }
     }
+
+
 
     /**
      * Handle practical exercise generation with AI
@@ -1923,6 +1948,7 @@ Format de réponse JSON :
 
         return $cleaned;
     }
+
 
     /**
      * Save questions to database

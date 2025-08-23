@@ -1,3 +1,4 @@
+
 <?php
 
 /**
@@ -911,7 +912,17 @@ function quiz_ai_pro_get_course_with_categories($course_id)
 
     return $course;
 }
-
+/**
+ * Increment the views count for a quiz
+ */
+function quiz_ai_pro_increment_quiz_views($quiz_id) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'quiz_ia_quizzes';
+    $wpdb->query($wpdb->prepare(
+        "UPDATE $table SET views = views + 1 WHERE id = %d",
+        $quiz_id
+    ));
+}
 function quiz_ai_pro_get_all_contents($args = [])
 {
     global $wpdb;
@@ -1492,7 +1503,9 @@ function quiz_ai_pro_get_all_quizzes_with_details($limit = 50, $offset = 0)
     $results = $wpdb->get_results($wpdb->prepare(
         "SELECT 
             q.*,
-            (SELECT COUNT(*) FROM {$wpdb->prefix}quiz_ia_questions WHERE quiz_id = q.id) as question_count
+            (SELECT COUNT(*) FROM {$wpdb->prefix}quiz_ia_questions WHERE quiz_id = q.id) as question_count,
+            (SELECT COUNT(*) FROM {$wpdb->prefix}quiz_ia_results WHERE quiz_id = q.id) as participants,
+            (SELECT COUNT(*) FROM {$wpdb->prefix}quiz_ia_results WHERE quiz_id = q.id) as attempts
         FROM $quizzes_table q
         ORDER BY q.created_at DESC
         LIMIT %d OFFSET %d",

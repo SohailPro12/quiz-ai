@@ -73,14 +73,11 @@ jQuery(document).ready(function ($) {
       e.preventDefault();
       const quizId = $(this).data("quiz-id");
 
-      /* console.log(
-        "Quiz IA Debug: Take quiz button clicked for quiz ID:",
-        quizId
-      );
-      console.log(
-        "Quiz IA Debug: Current user email in localStorage:",
-        localStorage.getItem("quiz_user_email")
-      ); */
+       $.post(quiz_ai_frontend.ajax_url, {
+        action: 'quiz_ai_pro_increment_quiz_views',
+        quiz_id: quizId,
+        nonce: quiz_ai_frontend.nonce
+    });
 
       // First check if user has previous attempts
       checkUserAttempts(quizId, function (hasAttempts, attempts) {
