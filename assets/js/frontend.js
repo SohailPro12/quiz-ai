@@ -73,30 +73,24 @@ jQuery(document).ready(function ($) {
       e.preventDefault();
       const quizId = $(this).data("quiz-id");
 
-       $.post(quiz_ai_frontend.ajax_url, {
-        action: 'quiz_ai_pro_increment_quiz_views',
+      // Show loading spinner/modal
+      showLoadingModal("Chargement du quiz...");
+
+      $.post(quiz_ai_frontend.ajax_url, {
+        action: "quiz_ai_pro_increment_quiz_views",
         quiz_id: quizId,
-        nonce: quiz_ai_frontend.nonce
-    });
+        nonce: quiz_ai_frontend.nonce,
+      });
 
       // First check if user has previous attempts
       checkUserAttempts(quizId, function (hasAttempts, attempts) {
-        /* console.log(
-          "Quiz IA Debug: Attempts check result - hasAttempts:",
-          hasAttempts,
-          "attempts count:",
-          attempts?.length || 0
-        ); */
+        $("#quiz-loading-modal").fadeOut(200, function () {
+          $(this).remove();
+        });
 
         if (hasAttempts) {
-          // Show attempts modal with option to take quiz again
-          //  console.log("Quiz IA Debug: Showing user attempts modal");
           showUserAttempts(quizId, attempts);
         } else {
-          // No previous attempts, start quiz directly
-          /*  console.log(
-            "Quiz IA Debug: No previous attempts, starting quiz directly"
-          ); */
           startQuizDirect(quizId);
         }
       });
@@ -1044,6 +1038,9 @@ jQuery(document).ready(function ($) {
     }
 
     function showPassingModal(pageIndex) {
+      $("#quiz-loading-modal").fadeOut(200, function () {
+        $(this).remove();
+      });
       const modalContent = `
         <div class="quiz-modal" id="quiz-passing-modal">
           <div class="quiz-modal-content">
@@ -1091,8 +1088,7 @@ jQuery(document).ready(function ($) {
     }
 
     function performQuizSubmission() {
-      //  console.log("Quiz IA Debug: Submitting quiz answers:", userAnswers);
-
+      showLoadingModal("Validation du quiz...");
       // Prepare submission data
       let submissionData = {
         action: "submit_quiz_answers",
@@ -1129,6 +1125,9 @@ jQuery(document).ready(function ($) {
         type: "POST",
         data: submissionData,
         success: function (response) {
+          $("#quiz-loading-modal").fadeOut(200, function () {
+            $(this).remove();
+          });
           if (response.success) {
             showQuizResult(response.data, settings, questions);
           } else {
@@ -1136,6 +1135,10 @@ jQuery(document).ready(function ($) {
           }
         },
         error: function () {
+          $("#quiz-loading-modal").fadeOut(200, function () {
+            $(this).remove();
+          });
+
           showErrorModal("Erreur de connexion lors de la soumission du quiz.");
         },
       });
@@ -1453,7 +1456,7 @@ jQuery(document).ready(function ($) {
         rec.course_url
       )}" target="_blank" rel="noopener">'${escapeHtml(
         rec.course_title
-      )}'</a> : ${escapeHtml(rec.course_url)}</p>
+      )}'</a> </p>
             <p><a href="${escapeHtml(
               rec.course_url
             )}" target="_blank" rel="noopener" class="course-access-button">🔗 Accéder au cours</a></p>

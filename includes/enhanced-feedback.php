@@ -569,8 +569,8 @@ function quiz_ai_pro_render_overall_course_recommendation($recommendation_data)
     // Course recommendation text with clickable link
     $html .= '<p>' . esc_html($recommendation_data['recommendation_text']) . ' ';
     $html .= '<a href="' . esc_url($recommendation_data['course_url']) . '" target="_blank" rel="noopener">';
-   // $html .= "'" . esc_html($recommendation_data['course_title']) . "'";
-   // $html .= '</a> : ' . esc_url($recommendation_data['course_url']) . '</p>';
+ $html .= "'" . esc_html($recommendation_data['course_title']) . "'";
+$html .= '</a> : ' . esc_url($recommendation_data['course_url']) . '</p>';
 
     // Clickable button
    // $html .= '<p><a href="' . esc_url($recommendation_data['course_url']) . '" target="_blank" rel="noopener" class="course-access-button">🔗 Accéder au cours</a></p>';
