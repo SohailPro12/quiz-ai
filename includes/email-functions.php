@@ -396,7 +396,8 @@ function quiz_ai_pro_get_new_quiz_email_template($data)
 function quiz_ai_pro_get_unsubscribe_link($email, $type = 'all')
 {
     $token = wp_hash($email . $type . 'quiz_ia_unsubscribe');
-    return home_url('/quiz-unsubscribe/?email=' . urlencode($email) . '&type=' . $type . '&token=' . $token);
+    // Update: use the new unsubscribe page slug
+    return home_url('/desinscription-quiz/?email=' . urlencode($email) . '&type=' . $type . '&token=' . $token);
 }
 
 /**

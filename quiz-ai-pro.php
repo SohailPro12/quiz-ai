@@ -90,11 +90,8 @@ class QuizIAPro
         // Hook for new quiz notifications
         add_action('quiz_ia_pro_quiz_published', array($this, 'send_new_quiz_notifications'));
 
-        // Hook for unsubscribe page
-        add_action('init', array($this, 'handle_unsubscribe_requests'));
-        add_action('init', array($this, 'add_unsubscribe_rewrite_rule'));
-        add_filter('query_vars', array($this, 'add_unsubscribe_query_vars'));
-        add_action('template_redirect', array($this, 'handle_unsubscribe_page'));
+        // Register unsubscribe shortcode
+        add_shortcode('quiz_ai_unsubscribe', array($this, 'unsubscribe_shortcode_handler'));
     }
 
     /**
@@ -426,43 +423,13 @@ class QuizIAPro
     }
 
     /**
-     * Add rewrite rule for unsubscribe page
+     * Unsubscribe shortcode handler
      */
-    public function add_unsubscribe_rewrite_rule()
+    public function unsubscribe_shortcode_handler($atts)
     {
-        add_rewrite_rule(
-            '^quiz-unsubscribe/?$',
-            'index.php?quiz_unsubscribe=1',
-            'top'
-        );
-    }
-
-    /**
-     * Add query vars for unsubscribe
-     */
-    public function add_unsubscribe_query_vars($vars)
-    {
-        $vars[] = 'quiz_unsubscribe';
-        return $vars;
-    }
-
-    /**
-     * Handle unsubscribe page display
-     */
-    public function handle_unsubscribe_page()
-    {
-        if (get_query_var('quiz_unsubscribe')) {
-            $this->show_unsubscribe_page();
-            exit;
-        }
-    }
-
-    /**
-     * Show unsubscribe page
-     */
-    private function show_unsubscribe_page()
-    {
+        ob_start();
         $type_label = '';
+        $success = false;
         if (isset($_GET['email']) && isset($_GET['type']) && isset($_GET['token'])) {
             if (function_exists('quiz_ai_pro_handle_unsubscribe')) {
                 $success = quiz_ai_pro_handle_unsubscribe();
@@ -476,75 +443,19 @@ class QuizIAPro
                 }
             }
         }
-
 ?>
-        <!DOCTYPE html>
-        <html <?php language_attributes(); ?>>
-
-        <head>
-            <meta charset="<?php bloginfo('charset'); ?>">
-            <title>Désinscription - <?php echo esc_html(get_bloginfo('name')); ?></title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    background: #f8f9fa;
-                    color: #333;
-                    margin: 0;
-                    padding: 0;
-                }
-
-                .unsubscribe-container {
-                    max-width: 500px;
-                    margin: 60px auto;
-                    background: #fff;
-                    border-radius: 12px;
-                    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-                    padding: 40px;
-                    text-align: center;
-                }
-
-                h1 {
-                    color: #0073aa;
-                    margin-bottom: 20px;
-                }
-
-                .success {
-                    color: #28a745;
-                    font-weight: bold;
-                }
-
-                .error {
-                    color: #dc3545;
-                    font-weight: bold;
-                }
-
-                a {
-                    color: #0073aa;
-                    text-decoration: none;
-                }
-
-                a:hover {
-                    text-decoration: underline;
-                }
-            </style>
-        </head>
-
-        <body>
-            <div class="unsubscribe-container">
-                <?php if ($success): ?>
-                    <h1>Désinscription réussie</h1>
-                    <p class="success">Vous avez été désinscrit avec succès <?php echo $type_label; ?>.</p>
-                <?php else: ?>
-                    <h1>Erreur</h1>
-                    <p class="error">Une erreur est survenue lors de la désinscription.<br>Vérifiez le lien ou contactez le support.</p>
-                <?php endif; ?>
-                <p><a href="<?php echo esc_url(home_url()); ?>">← Retour au site</a></p>
-            </div>
-        </body>
-
-        </html>
+        <div class="unsubscribe-container" style="max-width:500px;margin:60px auto;background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:40px;text-align:center;">
+            <?php if ($success): ?>
+                <h1 style="color:#0073aa;margin-bottom:20px;">Désinscription réussie</h1>
+                <p class="success" style="color:#28a745;font-weight:bold;">Vous avez été désinscrit avec succès <?php echo $type_label; ?>.</p>
+            <?php else: ?>
+                <h1 style="color:#0073aa;margin-bottom:20px;">Erreur</h1>
+                <p class="error" style="color:#dc3545;font-weight:bold;">Une erreur est survenue lors de la désinscription.<br>Vérifiez le lien ou contactez le support.</p>
+            <?php endif; ?>
+            <p><a href="<?php echo esc_url(home_url()); ?>" style="color:#0073aa;text-decoration:none;">← Retour au site</a></p>
+        </div>
 <?php
+        return ob_get_clean();
     }
 }
 
