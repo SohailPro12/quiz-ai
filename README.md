@@ -1,9 +1,9 @@
 <p align="center">
-    <img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/ec559a9f6bfd399b82bb44393651661b08aaf7ba/icons/folder-markdown-open.svg" align="center" width="30%">
+	<img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/ec559a9f6bfd399b82bb44393651661b08aaf7ba/icons/folder-markdown-open.svg" align="center" width="30%">
 </p>
 <p align="center"><h1 align="center">QUIZ-AI</h1></p>
 <p align="center">
-	<em><code>❯ REPLACE-ME</code></em>
+	<em><code>❯ Génération intelligente de quiz pour e-learning</code></em>
 </p>
 <p align="center">
 	<img src="https://img.shields.io/github/license/SohailPro12/quiz-ai?style=default&logo=opensourceinitiative&logoColor=white&color=0080ff" alt="license">
@@ -11,272 +11,157 @@
 	<img src="https://img.shields.io/github/languages/top/SohailPro12/quiz-ai?style=default&color=0080ff" alt="repo-top-language">
 	<img src="https://img.shields.io/github/languages/count/SohailPro12/quiz-ai?style=default&color=0080ff" alt="repo-language-count">
 </p>
-<p align="center"><!-- default option, no dependency badges. -->
-</p>
-<p align="center">
-	<!-- default option, no dependency badges. -->
-</p>
 <br>
 
-## 🔗 Table of Contents
+## 🔗 Table des matières
 
-- [📍 Overview](#-overview)
-- [👾 Features](#-features)
-- [📁 Project Structure](#-project-structure)
-  - [📂 Project Index](#-project-index)
-- [🚀 Getting Started](#-getting-started)
-  - [☑️ Prerequisites](#-prerequisites)
+- [📍 Aperçu](#-aperçu)
+- [👾 Fonctionnalités](#-fonctionnalités)
+- [📁 Structure du projet](#-structure-du-projet)
+  - [📂 Index du projet](#-index-du-projet)
+- [🚀 Démarrage rapide](#-démarrage-rapide)
+  - [☑️ Prérequis](#-prérequis)
   - [⚙️ Installation](#-installation)
-  - [🤖 Usage](#🤖-usage)
-  - [🧪 Testing](#🧪-testing)
-- [📌 Project Roadmap](#-project-roadmap)
-- [🔰 Contributing](#-contributing)
-- [🎗 License](#-license)
-- [🙌 Acknowledgments](#-acknowledgments)
+  - [🤖 Utilisation](#-utilisation)
+  - [🧪 Tests](#-tests)
+- [📌 Feuille de route](#-feuille-de-route)
+- [🔰 Contribution](#-contribution)
+- [🎗 Licence](#-licence)
+- [🙌 Remerciements](#-remerciements)
 
 ---
 
-## 📍 Overview
+## 📍 Aperçu
 
-<code>❯ REPLACE-ME</code>
+Ce projet a été développé dans le cadre de mon stage chez **innovation.ma**, ayant pour objectif la **modernisation d’une plateforme e-learning** par l’intégration d’outils d’Intelligence Artificielle.
+
+### Contexte du stage
+
+- **Sujet du stage :** Modernisation d’une plateforme e-learning avec intégration d’outils IA (innovation.ma).  
+- **Contexte :** La plateforme propose des contenus pédagogiques autour de la Data, BI, IA et des cas pratiques. Afin d’améliorer l’expérience utilisateur et d’accroître l’engagement des apprenants, une évolution technologique a été mise en place : intégration d’IA générative, analytics et personnalisation.  
+
+### Objectifs du stage
+
+1. Réaliser un audit fonctionnel et technique de la plateforme existante.  
+2. Proposer une architecture cible intégrant des modules IA.  
+3. Concevoir et prototyper des fonctionnalités basées sur l’IA :  
+   - Génération automatique de quiz à partir des contenus de cours.  
+
+👩‍💼 **Encadrante :** Directrice BU Data BI & AI – [Samia Naciri](https://www.linkedin.com/in/samia-naciri/?originalSubdomain=ma)  
 
 ---
 
-## 👾 Features
+## 👾 Fonctionnalités
 
-<code>❯ REPLACE-ME</code>
+- **Génération de quiz par IA :** création automatique de quiz à partir du contenu pédagogique.  
+- **Tableau de bord admin :** gestion centralisée des quiz, statistiques et contenu.  
+- **Learning Analytics :** suivi des progrès et de la performance des apprenants.  
+- **Feedback personnalisé :** retours intelligents adaptés aux réponses des apprenants.  
+- **Intégration LearnPress :** compatibilité avec le LMS LearnPress pour la gestion des cours et quiz.  
+- **Notifications email :** envoi automatique des résultats et alertes.  
+- **Gestion de contenu :** organisation et mise à jour rapide des questions et réponses.  
 
 ---
 
-## 📁 Project Structure
+## 📁 Structure du projet
 
 ```sh
 └── quiz-ai/
-    ├── README.md
-    ├── admin
-    │   ├── content-manager.php
-    │   ├── dashboard.php
-    │   ├── edit-quiz.php
-    │   ├── emails.php
-    │   ├── generate-quiz.php
-    │   ├── quiz-list.php
-    │   └── stats.php
-    ├── assets
-    │   ├── css
-    │   └── js
-    ├── includes
-    │   ├── ai-functions.php
-    │   ├── ajax-handlers.php
-    │   ├── db-functions.php
-    │   ├── email-functions.php
-    │   ├── enhanced-feedback.php
-    │   ├── frontend-functions.php
-    │   ├── helpers.php
-    │   ├── learnpress-db-fix.php
-    │   ├── learnpress-integration.php
-    │   └── rag-functions.php
-    └── quiz-ai-pro.php
+	├── README.md
+	├── admin
+	│   ├── content-manager.php
+	│   ├── dashboard.php
+	│   ├── edit-quiz.php
+	│   ├── emails.php
+	│   ├── generate-quiz.php
+	│   ├── quiz-list.php
+	│   └── stats.php
+	├── assets
+	│   ├── css
+	│   └── js
+	├── includes
+	│   ├── ai-functions.php
+	│   ├── ajax-handlers.php
+	│   ├── db-functions.php
+	│   ├── email-functions.php
+	│   ├── enhanced-feedback.php
+	│   ├── frontend-functions.php
+	│   ├── helpers.php
+	│   ├── learnpress-db-fix.php
+	│   ├── learnpress-integration.php
+	│   └── rag-functions.php
+	└── quiz-ai-pro.php
 ```
 
+### 📂 Index du projet
 
-### 📂 Project Index
-<details open>
-	<summary><b><code>QUIZ-AI/</code></b></summary>
-	<details> <!-- __root__ Submodule -->
-		<summary><b>__root__</b></summary>
-		<blockquote>
-			<table>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/quiz-ai-pro.php'>quiz-ai-pro.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			</table>
-		</blockquote>
-	</details>
-	<details> <!-- includes Submodule -->
-		<summary><b>includes</b></summary>
-		<blockquote>
-			<table>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/includes/email-functions.php'>email-functions.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/includes/frontend-functions.php'>frontend-functions.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/includes/ajax-handlers.php'>ajax-handlers.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/includes/helpers.php'>helpers.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/includes/learnpress-integration.php'>learnpress-integration.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/includes/db-functions.php'>db-functions.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/includes/rag-functions.php'>rag-functions.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/includes/ai-functions.php'>ai-functions.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/includes/learnpress-db-fix.php'>learnpress-db-fix.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/includes/enhanced-feedback.php'>enhanced-feedback.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			</table>
-		</blockquote>
-	</details>
-	<details> <!-- admin Submodule -->
-		<summary><b>admin</b></summary>
-		<blockquote>
-			<table>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/admin/dashboard.php'>dashboard.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/admin/content-manager.php'>content-manager.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/admin/quiz-list.php'>quiz-list.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/admin/generate-quiz.php'>generate-quiz.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/admin/stats.php'>stats.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/admin/emails.php'>emails.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			<tr>
-				<td><b><a href='https://github.com/SohailPro12/quiz-ai/blob/master/admin/edit-quiz.php'>edit-quiz.php</a></b></td>
-				<td><code>❯ REPLACE-ME</code></td>
-			</tr>
-			</table>
-		</blockquote>
-	</details>
-</details>
+Un aperçu détaillé des fichiers principaux est disponible dans la version anglaise du README (voir code source).  
 
 ---
-## 🚀 Getting Started
 
-### ☑️ Prerequisites
+## 🚀 Démarrage rapide
 
-Before getting started with quiz-ai, ensure your runtime environment meets the following requirements:
+### ☑️ Prérequis
 
-- **Programming Language:** PHP
-
+- **Langage :** PHP  
+- **Plateforme :** WordPress  
 
 ### ⚙️ Installation
 
-Install quiz-ai using one of the following methods:
-
-**Build from source:**
-
-1. Clone the quiz-ai repository:
-```sh
-❯ git clone https://github.com/SohailPro12/quiz-ai
-```
-
-2. Navigate to the project directory:
-```sh
-❯ cd quiz-ai
-```
-
-3. Install the project dependencies:
-
-echo 'INSERT-INSTALL-COMMAND-HERE'
-
-
-
-### 🤖 Usage
-Run quiz-ai using the following command:
-echo 'INSERT-RUN-COMMAND-HERE'
-
-### 🧪 Testing
-Run the test suite using the following command:
-echo 'INSERT-TEST-COMMAND-HERE'
-
----
-## 📌 Project Roadmap
-
-- [X] **`Task 1`**: <strike>Implement feature one.</strike>
-- [ ] **`Task 2`**: Implement feature two.
-- [ ] **`Task 3`**: Implement feature three.
-
----
-
-## 🔰 Contributing
-
-- **💬 [Join the Discussions](https://github.com/SohailPro12/quiz-ai/discussions)**: Share your insights, provide feedback, or ask questions.
-- **🐛 [Report Issues](https://github.com/SohailPro12/quiz-ai/issues)**: Submit bugs found or log feature requests for the `quiz-ai` project.
-- **💡 [Submit Pull Requests](https://github.com/SohailPro12/quiz-ai/blob/main/CONTRIBUTING.md)**: Review open PRs, and submit your own PRs.
-
-<details closed>
-<summary>Contributing Guidelines</summary>
-
-1. **Fork the Repository**: Start by forking the project repository to your github account.
-2. **Clone Locally**: Clone the forked repository to your local machine using a git client.
+1. Cloner le dépôt :  
    ```sh
    git clone https://github.com/SohailPro12/quiz-ai
    ```
-3. **Create a New Branch**: Always work on a new branch, giving it a descriptive name.
+2. Copier le dossier du plugin dans WordPress :  
    ```sh
-   git checkout -b new-feature-x
+   cp -r quiz-ai /path/to/wordpress/wp-content/plugins/
    ```
-4. **Make Your Changes**: Develop and test your changes locally.
-5. **Commit Your Changes**: Commit with a clear message describing your updates.
-   ```sh
-   git commit -m 'Implemented new feature x.'
-   ```
-6. **Push to github**: Push the changes to your forked repository.
-   ```sh
-   git push origin new-feature-x
-   ```
-7. **Submit a Pull Request**: Create a PR against the original project repository. Clearly describe the changes and their motivations.
-8. **Review**: Once your PR is reviewed and approved, it will be merged into the main branch. Congratulations on your contribution!
-</details>
+3. Activer le plugin dans le panneau d’administration WordPress (**Quiz AI Pro**).  
 
-<details closed>
-<summary>Contributor Graph</summary>
-<br>
-<p align="left">
-   <a href="https://github.com{/SohailPro12/quiz-ai/}graphs/contributors">
-      <img src="https://contrib.rocks/image?repo=SohailPro12/quiz-ai">
-   </a>
-</p>
-</details>
+### 🤖 Utilisation
+
+- Accéder au menu **Quiz AI Pro** dans l’administration WordPress.  
+- Générer des quiz depuis l’onglet *Generate Quiz*.  
+- Suivre les statistiques et gérer le contenu depuis le tableau de bord.  
+- Les apprenants peuvent réaliser les quiz et recevoir des retours personnalisés par email.  
+
+### 🧪 Tests
+
+- Vérifier la génération des quiz, la réception des emails et le suivi statistique directement sur WordPress.  
 
 ---
 
-## 🎗 License
+## 📌 Feuille de route
 
-This project is protected under the [SELECT-A-LICENSE](https://choosealicense.com/licenses) License. For more details, refer to the [LICENSE](https://choosealicense.com/licenses/) file.
+- [x] Génération de quiz par IA  
+- [x] Notifications email automatiques  
+- [x] Intégration LearnPress  
+- [x] Suivi de l’engagement des utilisateurs  
+- [x] Tableau de bord administrateur  
+- [ ] Analytics avancés  
+- [ ] Gamification (badges, classements, récompenses)  
+- [ ] Optimisation mobile  
 
 ---
 
-## 🙌 Acknowledgments
+## 🔰 Contribution
 
-- List any resources, contributors, inspiration, etc. here.
+Les contributions sont les bienvenues ! Vous pouvez proposer :  
+- Personnalisation des parcours selon le profil et le niveau de l’apprenant.  
+- Chatbot pédagogique pour expliquer ou résumer les leçons.  
+- Système de recommandation de contenus adaptés.  
+
+👉 Voir les [guidelines de contribution](#) pour les étapes détaillées (fork, branche, commit, pull request).  
 
 ---
+
+## 🎗 Licence
+
+Ce projet est distribué sous licence **MIT**. Voir le fichier [LICENSE](LICENSE) pour plus de détails.  
+
+---
+
+## 🙌 Remerciements
+
+- Merci à **innovation.ma** pour l’opportunité du stage et l’encadrement.  
+- Merci à toutes les ressources open-source et communautés ayant inspiré ce projet.  
