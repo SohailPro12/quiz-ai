@@ -191,5 +191,4 @@ Les contributions sont les bienvenues ! Vous pouvez proposer :
 
 ## 🙌 Remerciements
 
-- Merci à **innovation.ma** pour l’opportunité du stage et l’encadrement.  
-- Merci à toutes les ressources open-source et communautés ayant inspiré ce projet.  
+- Merci à **innovation.ma** pour l’opportunité du stage et l’encadrement.
