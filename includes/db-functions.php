@@ -915,7 +915,8 @@ function quiz_ai_pro_get_course_with_categories($course_id)
 /**
  * Increment the views count for a quiz
  */
-function quiz_ai_pro_increment_quiz_views($quiz_id) {
+function quiz_ai_pro_increment_quiz_views($quiz_id)
+{
     global $wpdb;
     $table = $wpdb->prefix . 'quiz_ia_quizzes';
     $wpdb->query($wpdb->prepare(
@@ -2558,6 +2559,7 @@ function quiz_ai_pro_get_filtered_quizzes($filters, $page = 1, $per_page = 20)
 {
     global $wpdb;
 
+    error_log('DEBUG: quiz_ai_pro_get_filtered_quizzes called with filters=' . print_r($filters, true));
     $conditions = ['1=1'];
     $joins = [];
 
@@ -2583,7 +2585,19 @@ function quiz_ai_pro_get_filtered_quizzes($filters, $page = 1, $per_page = 20)
 
     // Category filter
     if (!empty($filters['category'])) {
-        $conditions[] = $wpdb->prepare('q.category_id LIKE %s', '%"' . intval($filters['category']) . '"%');
+        // Log a sample category_id value for debugging
+        $sample = $wpdb->get_var("SELECT category_id FROM {$wpdb->prefix}quiz_ia_quizzes LIMIT 1");
+        error_log('DEBUG: Sample category_id value=' . print_r($sample, true));
+        // Try to match both JSON and serialized formats
+        $cat_id = intval($filters['category']);
+        // Match JSON array: [5], [5, ...], [...,5], [...,5,...]
+        $conditions[] = $wpdb->prepare(
+            'q.category_id LIKE %s OR q.category_id LIKE %s OR q.category_id LIKE %s OR q.category_id LIKE %s',
+            '%[' . $cat_id . ']%',         // single category
+            '%[' . $cat_id . ',%',         // first in array
+            '%, ' . $cat_id . ']%',        // last in array
+            '%, ' . $cat_id . ',%'         // middle in array
+        );
     }
 
     // Search filter
@@ -2599,11 +2613,13 @@ function quiz_ai_pro_get_filtered_quizzes($filters, $page = 1, $per_page = 20)
 
     // Count total results
     $where_clause = implode(' AND ', $conditions);
+    error_log('DEBUG: WHERE clause=' . $where_clause);
     $total = intval($wpdb->get_var("
         SELECT COUNT(*) 
         FROM {$wpdb->prefix}quiz_ia_quizzes q 
         WHERE {$where_clause}
     "));
+    error_log('DEBUG: total quizzes found=' . $total);
 
     // Get quizzes with pagination
     $offset = ($page - 1) * $per_page;
@@ -2616,6 +2632,7 @@ function quiz_ai_pro_get_filtered_quizzes($filters, $page = 1, $per_page = 20)
         {$order_by}
         LIMIT %d OFFSET %d
     ", $per_page, $offset));
+    error_log('DEBUG: quizzes result=' . print_r($quizzes, true));
 
     // Add course and category names
     foreach ($quizzes as $quiz) {
@@ -2910,7 +2927,7 @@ function quiz_ai_pro_get_category_names_for_quiz($quiz_id)
 
     $category_names = [];
     foreach ($category_ids as $category_id) {
-        $category = get_term($category_id, 'category');
+        $category = get_term($category_id, 'course_category');
         if ($category && !is_wp_error($category)) {
             $category_names[] = $category->name;
         }

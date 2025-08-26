@@ -108,6 +108,10 @@ class QuizIAPro
     private function register_shortcodes()
     {
         add_shortcode('quiz_categories', array($this, 'quiz_categories_shortcode'));
+        // Register the latest quizzes shortcode
+        require_once QUIZ_IA_PRO_PLUGIN_DIR . 'includes/quiz-ai-latest-quizzes-shortcode.php';
+        add_shortcode('quiz_ai_latest_quizzes', 'quiz_ai_latest_quizzes_shortcode');
+        add_action('wp_enqueue_scripts', 'quiz_ai_latest_quizzes_enqueue_styles');
         add_action('wp_enqueue_scripts', array($this, 'frontend_scripts'));
     }
 

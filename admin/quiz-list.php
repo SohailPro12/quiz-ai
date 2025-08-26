@@ -4,8 +4,29 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Get all quizzes from database
-$quizzes = quiz_ai_pro_get_all_quizzes_with_details(100, 0);
+// Handle category filter from GET
+$category_filter = isset($_GET['filter_category']) ? intval($_GET['filter_category']) : '';
+
+// Build filters array for query
+$filters = [];
+if ($category_filter) {
+    $filters['category'] = $category_filter;
+}
+$status_filter = isset($_GET['filter_status']) ? sanitize_text_field($_GET['filter_status']) : '';
+if ($status_filter) {
+    $filters['status'] = $status_filter;
+}
+
+// Get filtered quizzes from database
+if (!empty($filters)) {
+
+    // Get filtered quizzes
+    $quizzes = quiz_ai_pro_get_filtered_quizzes($filters, 1, 100);
+    error_log('DEBUG: quizzes=' . print_r($quizzes, true));
+    $quizzes = is_array($quizzes) && isset($quizzes['quizzes']) ? $quizzes['quizzes'] : [];
+} else {
+    $quizzes = quiz_ai_pro_get_all_quizzes_with_details(100, 0);
+}
 
 // Get LearnPress course categories for filter dropdown
 global $wpdb;
@@ -241,7 +262,7 @@ $status_filter = isset($_GET['filter_status']) ? sanitize_text_field($_GET['filt
                                 <div class="row-actions">
                                     <span class="edit"><a href="<?php echo admin_url('admin.php?page=quiz-ai-pro-edit&quiz_id=' . $quiz->id); ?>" aria-label="Modifier">Modifier</a> | </span>
                                     <?php if ($quiz->status === 'published'): ?>
-                                        
+
                                         <span class="unpublish"><a href="#" class="quiz-action" data-action="unpublish" data-quiz-id="<?php echo esc_attr($quiz->id); ?>" aria-label="Dépublier">Dépublier</a> | </span>
                                     <?php else: ?>
                                         <span class="publish"><a href="#" class="quiz-action" data-action="publish" data-quiz-id="<?php echo esc_attr($quiz->id); ?>" aria-label="Publier">Publier</a> | </span>
