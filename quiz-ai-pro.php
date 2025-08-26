@@ -51,7 +51,7 @@ class QuizIAPro
                 } else {
                     error_log('Quiz IA Pro: Function quiz_ai_pro_create_all_tables_safe not found during activation');
                 }
-                days = 15; // Number of days to keep logs
+                $days = 15; // Number of days to keep logs
                 global $wpdb;
                 $table_name = $wpdb->prefix . 'quiz_ia_security_logs';
                 return $wpdb->query($wpdb->prepare(
