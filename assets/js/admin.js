@@ -616,8 +616,8 @@
    * Initialize Filters functionality
    */
   function initFilters() {
-    console.log("Initializing filters...");
-    console.log("quiz_ai_ajax object:", quiz_ai_ajax);
+  /*   console.log("Initializing filters...");
+    console.log("quiz_ai_ajax object:", quiz_ai_ajax); */
 
     // Bouton réinitialiser
     $(".reset-btn").on("click", function () {
