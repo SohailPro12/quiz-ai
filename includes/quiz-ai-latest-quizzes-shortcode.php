@@ -54,7 +54,7 @@ function quiz_ai_latest_quizzes_shortcode($atts)
         $category_names = function_exists('quiz_ai_pro_get_category_names_for_quiz') ? quiz_ai_pro_get_category_names_for_quiz($quiz->id) : [];
         $category = !empty($category_names) ? (function_exists('esc_html') ? esc_html($category_names[0]) : $category_names[0]) : (function_exists('__') ? __('Uncategorized', 'quiz-ai') : 'Uncategorized');
         $date = function_exists('date_i18n') ? date_i18n('j M Y', strtotime($quiz->created_at)) : date('j M Y', strtotime($quiz->created_at));
-    $link = 'https://innovation.ma/quiz-tests-exam-questions/';
+        $link = 'https://innovation.ma/quiz-tests-exam-questions/';
         $footer_text = "$category • $date";
         echo "<div class='quiz-ai-card'>
                 <a href='$link' class='quiz-ai-card-link'>
