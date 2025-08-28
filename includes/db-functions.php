@@ -1,4 +1,5 @@
 
+
 <?php
 
 /**
@@ -57,7 +58,8 @@ function quiz_ai_pro_create_all_tables()
         'quiz_ia_results' => quiz_ai_pro_get_results_table_sql(),
         'quiz_ia_course_chunks' => quiz_ai_pro_get_course_chunks_table_sql(),
         'quiz_ia_email_preferences' => quiz_ai_pro_get_email_preferences_table_sql(),
-        'quiz_ia_comments' => quiz_ai_pro_get_quiz_comments_table_sql()
+        'quiz_ia_comments' => quiz_ai_pro_get_quiz_comments_table_sql(),
+        'quiz_ia_trusted_domains' => quiz_ai_pro_create_trusted_domains_table()
     ];
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -124,7 +126,10 @@ function quiz_ai_pro_create_all_tables_safe()
         'quiz_ia_answers' => quiz_ai_pro_get_answers_table_sql(),
         'quiz_ia_results' => quiz_ai_pro_get_results_table_sql(),
         'quiz_ia_course_chunks' => quiz_ai_pro_get_course_chunks_table_sql(),
-        'quiz_ia_comments' => quiz_ai_pro_get_quiz_comments_table_sql()
+        'quiz_ia_comments' => quiz_ai_pro_get_quiz_comments_table_sql(),
+        'quiz_ia_email_preferences' => quiz_ai_pro_get_email_preferences_table_sql(),
+        'quiz_ia_trusted_domains' => quiz_ai_pro_create_trusted_domains_table()
+
     ];
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -620,7 +625,8 @@ function quiz_ai_pro_check_all_tables()
         'quiz_ia_results',
         'quiz_ia_course_chunks',
         'quiz_ia_email_preferences',
-        'quiz_ia_comments'
+        'quiz_ia_comments',
+        'quiz_ia_trusted_domains'
     ];
 
     $existing_tables = [];
@@ -1088,7 +1094,10 @@ function quiz_ai_pro_check_database()
         $wpdb->prefix . 'quiz_ia_questions',
         $wpdb->prefix . 'quiz_ia_answers',
         $wpdb->prefix . 'quiz_ia_course_chunks',
-        $wpdb->prefix . 'quiz_ia_results'
+        $wpdb->prefix . 'quiz_ia_results',
+        $wpdb->prefix . 'quiz_ia_email_preferences',
+        $wpdb->prefix . 'quiz_ia_comments',
+        $wpdb->prefix . 'quiz_ia_trusted_domains'
     ];
 
     foreach ($tables as $table) {
@@ -2317,6 +2326,21 @@ function quiz_ai_pro_get_relevant_chunks_hybrid($query, $course_id = null, $limi
     return array_slice($results, 0, $limit);
 }
 
+// Create trusted domains table if not exists
+function quiz_ai_pro_create_trusted_domains_table()
+{
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'quiz_ia_trusted_domains';
+    $charset_collate = $wpdb->get_charset_collate();
+    return "CREATE TABLE IF NOT EXISTS $table_name (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        domain varchar(255) NOT NULL,
+        added_by mediumint(9) NOT NULL,
+        added_at datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY domain (domain)
+    ) $charset_collate;";
+}
 /**
  * Get quiz comments table SQL
  */

@@ -62,15 +62,8 @@ function quiz_ai_latest_quizzes_shortcode($atts)
         if ($has_image) {
             echo "<img src='$img' alt='$title' class='quiz-ai-card-img'/>";
         } else {
-            // Improved placeholder with icon and label
-            echo "<div class='quiz-ai-card-img-placeholder'>
-                    <svg width='48' height='48' viewBox='0 0 48 48' fill='none' xmlns='http://www.w3.org/2000/svg' class='quiz-ai-card-img-placeholder-icon'>
-                        <rect width='48' height='48' rx='12' fill='#e0e0e0'/>
-                        <path d='M24 14C20.6863 14 18 16.6863 18 20C18 23.3137 20.6863 26 24 26C27.3137 26 30 23.3137 30 20C30 16.6863 27.3137 14 24 14ZM24 24C21.7909 24 20 22.2091 20 20C20 17.7909 21.7909 16 24 16C26.2091 16 28 17.7909 28 20C28 22.2091 26.2091 24 24 24Z' fill='#bdbdbd'/>
-                        <path d='M12 36C12 31.5817 16.5817 28 22 28H26C31.4183 28 36 31.5817 36 36V38H12V36Z' fill='#bdbdbd'/>
-                    </svg>
-                    <span class='quiz-ai-card-img-placeholder-label'>No Image</span>
-                </div>";
+            $default_img = plugins_url('assets/media/no-image-default.jpg', defined('QUIZ_IA_PRO_PLUGIN_FILE') ? QUIZ_IA_PRO_PLUGIN_FILE : __FILE__);
+            echo "<img src='$default_img' alt='No Image' class='quiz-ai-card-img quiz-ai-card-img-default'/>";
         }
         echo "    </div>
                     <div class='quiz-ai-card-footer'>

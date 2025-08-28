@@ -237,8 +237,6 @@
   font-size: 13px;
 }
 
-
-
 /* Page des statistiques */
 .stats-overview {
   margin-bottom: 30px;
@@ -1802,6 +1800,13 @@
 .column-learnpress {
   width: 120px;
   text-align: center;
+}
+
+/* Hide WP admin footer on Quiz AI Pro spam page */
+#wpfooter,
+.footer-thankyou,
+.update-nag {
+  display: none !important;
 }
 
 /* Animation for loading state */

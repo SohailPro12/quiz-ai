@@ -27,14 +27,17 @@ define('QUIZ_IA_PRO_PLUGIN_URL', plugin_dir_url(__FILE__));
  * Main Plugin Class
  */
 class QuizIAPro
+
 {
 
     public function __construct()
     {
+        add_action('wp_ajax_quiz_ai_batch_delete_spam', array($this, 'ajax_batch_delete_spam'));
         add_action('init', array($this, 'init'));
         add_action('admin_menu', array($this, 'admin_menu'));
         add_action('admin_enqueue_scripts', array($this, 'admin_scripts'));
         add_action('admin_init', array($this, 'check_database_status'));
+        add_action('wp_ajax_quiz_ai_export_learnpress_all_csv', array($this, 'ajax_export_learnpress_all_csv'));
         // Removed table recreation hook since we'll use AJAX instead
         register_activation_hook(__FILE__, function () {
             try {
@@ -51,10 +54,45 @@ class QuizIAPro
                 } else {
                     error_log('Quiz IA Pro: Function quiz_ai_pro_create_all_tables_safe not found during activation');
                 }
-                $days = 15; // Number of days to keep logs
+
+                // Insert default trusted domains only once
                 global $wpdb;
+                $trusted_table = $wpdb->prefix . 'quiz_ia_trusted_domains';
+                $default_domains = [
+                    'gmail.com',
+                    'hotmail.com',
+                    'outlook.com',
+                    'yahoo.com',
+                    'live.com',
+                    'icloud.com',
+                    'protonmail.com',
+                    'aol.com',
+                    'msn.com',
+                    'wanadoo.fr',
+                    'orange.fr',
+                    'free.fr',
+                    'laposte.net',
+                    'sfr.fr',
+                    'bbox.fr',
+                    'numericable.fr',
+                    'gmail.fr',
+                    'yahoo.fr',
+                    'hotmail.fr',
+                    'outlook.fr',
+                    'live.fr'
+                ];
+                if ($wpdb->get_var("SHOW TABLES LIKE '$trusted_table'")) {
+                    $existing = $wpdb->get_col("SELECT domain FROM $trusted_table");
+                    foreach ($default_domains as $domain) {
+                        if (!in_array($domain, $existing)) {
+                            $wpdb->insert($trusted_table, ['domain' => $domain]);
+                        }
+                    }
+                }
+
+                $days = 15; // Number of days to keep logs
                 $table_name = $wpdb->prefix . 'quiz_ia_security_logs';
-                return $wpdb->query($wpdb->prepare(
+                $wpdb->query($wpdb->prepare(
                     "DELETE FROM {$table_name} WHERE created_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
                     intval($days)
                 ));
@@ -115,6 +153,69 @@ class QuizIAPro
         add_action('wp_enqueue_scripts', array($this, 'frontend_scripts'));
     }
 
+
+    public function delete_spam_emails_page()
+    {
+        include QUIZ_IA_PRO_PLUGIN_DIR . 'admin/others-delete-spam.php';
+        quiz_ai_delete_spam_emails_page();
+    }
+
+
+
+    // AJAX handler for batch spam user deletion
+    public function ajax_batch_delete_spam()
+    {
+        check_ajax_referer('quiz_ai_admin_nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Permission denied');
+        }
+        if (empty($_POST['ids']) || !is_array($_POST['ids'])) {
+            wp_send_json_error('No IDs');
+        }
+        require_once ABSPATH . 'wp-admin/includes/user.php';
+        $deleted = 0;
+        foreach ($_POST['ids'] as $id) {
+            if (wp_delete_user((int)$id)) $deleted++;
+        }
+        wp_send_json_success(['deleted' => $deleted]);
+    }
+    // AJAX handler for exporting all LearnPress students as CSV
+    public function ajax_export_learnpress_all_csv()
+    {
+        check_ajax_referer('quiz_ai_admin_nonce', 'nonce');
+        global $wpdb;
+        $courses = $wpdb->get_results("SELECT ID, post_title FROM {$wpdb->posts} WHERE post_type = 'lp_course' AND post_status = 'publish'");
+        $csv_rows = [];
+        $csv_rows[] = ["Course", "User ID", "Username", "Email", "Registered At"];
+        foreach ($courses as $course) {
+            $course_id = $course->ID;
+            $course_name = $course->post_title;
+            $students = $wpdb->get_results($wpdb->prepare("SELECT user_id FROM {$wpdb->prefix}learnpress_user_items WHERE item_id = %d AND item_type = 'lp_course'", $course_id));
+            foreach ($students as $student) {
+                $user = get_userdata($student->user_id);
+                $reg_date = '';
+                if ($user) {
+                    $user_item = $wpdb->get_row($wpdb->prepare("SELECT start_time FROM {$wpdb->prefix}learnpress_user_items WHERE user_id = %d AND item_id = %d AND item_type = 'lp_course'", $user->ID, $course_id));
+                    $reg_date = $user_item ? $user_item->start_time : '-';
+                    $csv_rows[] = [
+                        $course_name,
+                        $user->ID,
+                        $user->user_login,
+                        $user->user_email,
+                        $reg_date
+                    ];
+                }
+            }
+        }
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="learnpress_students_all_courses.csv"');
+        $output = fopen('php://output', 'w');
+        foreach ($csv_rows as $row) {
+            fputcsv($output, $row);
+        }
+        fclose($output);
+        exit;
+    }
     /**
      * Plugin activation
      */
@@ -180,6 +281,11 @@ class QuizIAPro
         }
     }
 
+    public function export_learnpress_students_page()
+    {
+        include QUIZ_IA_PRO_PLUGIN_DIR . 'admin/others-export-learnpress.php';
+        quiz_ai_export_learnpress_students_page();
+    }
     public function admin_menu()
     {
         // Main menu
@@ -242,10 +348,36 @@ class QuizIAPro
             'quiz-ia-pro-emails',
             array($this, 'emails_page')
         );
+        // Submenu - Export LearnPress Students
+        add_submenu_page(
+            'quiz-ai-pro',
+            'Export LearnPress Students',
+            'Export LearnPress Students',
+            'manage_options',
+            'quiz-ai-pro-export-learnpress',
+            array($this, 'export_learnpress_students_page')
+        );
+        // Submenu - Delete Spam Emails
+        add_submenu_page(
+            'quiz-ai-pro',
+            'Delete Spam Emails',
+            'Delete Spam Emails',
+            'manage_options',
+            'quiz-ai-pro-delete-spam',
+            array($this, 'delete_spam_emails_page')
+        );
     }
 
     public function admin_scripts($hook)
     {
+        // Load batch spam script only on spam page
+        if (strpos($hook, 'quiz-ai-pro-delete-spam') !== false) {
+            wp_enqueue_script('quiz-ai-admin-spam-batch', QUIZ_IA_PRO_PLUGIN_URL . 'assets/js/admin-spam-batch.js', array('jquery'), QUIZ_IA_PRO_VERSION, true);
+            wp_localize_script('quiz-ai-admin-spam-batch', 'quiz_ai_ajax', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('quiz_ai_admin_nonce')
+            ));
+        }
         // Load scripts on all admin pages for table recreation functionality
         wp_enqueue_script('quiz-ia-pro-admin-global', QUIZ_IA_PRO_PLUGIN_URL . 'assets/js/admin.js', array('jquery'), QUIZ_IA_PRO_VERSION, true);
 
