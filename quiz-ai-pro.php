@@ -366,6 +366,18 @@ class QuizIAPro
             'quiz-ai-pro-delete-spam',
             array($this, 'delete_spam_emails_page')
         );
+        // Submenu - Migrate QSM Quizzes
+        add_submenu_page(
+            'quiz-ai-pro',
+            'Migrate QSM Quizzes',
+            'Migrate QSM Quizzes',
+            'manage_options',
+            'quiz-ai-pro-migrate-qsm',
+            function () {
+                include QUIZ_IA_PRO_PLUGIN_DIR . 'admin/others-migrate-qsm.php';
+                quiz_ai_migrate_qsm_quizzes_page();
+            }
+        );
     }
 
     public function admin_scripts($hook)
