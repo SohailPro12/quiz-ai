@@ -22,6 +22,7 @@ function quiz_ai_latest_quizzes_shortcode($atts)
         'order' => 'DESC',
         'only_with_images' => false,
         'category' => '',
+        'published_only' => true,
     ], $atts, 'quiz_ai_latest_quizzes');
 
     global $wpdb;
@@ -33,6 +34,9 @@ function quiz_ai_latest_quizzes_shortcode($atts)
     }
     if ($atts['only_with_images']) {
         $where .= " AND (featured_image IS NOT NULL AND featured_image != '')";
+    }
+    if (!empty($atts['published_only']) && ($atts['published_only'] === true || $atts['published_only'] === 'true' || $atts['published_only'] === 1 || $atts['published_only'] === '1')) {
+        $where .= " AND status = 'published'";
     }
     $orderby = esc_sql($atts['orderby']);
     $order = (strtoupper($atts['order']) === 'ASC') ? 'ASC' : 'DESC';

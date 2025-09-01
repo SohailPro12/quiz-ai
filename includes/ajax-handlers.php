@@ -87,6 +87,7 @@ class QuizGeneratorAjax
         add_action('wp_ajax_quiz_ai_filter_quizzes', [$this, 'handle_filter_quizzes']);
         add_action('wp_ajax_quiz_ai_bulk_quiz_action', [$this, 'handle_bulk_quiz_action']);
         add_action('wp_ajax_quiz_ai_pro_get_result_details', [$this, 'handle_get_result_details']);
+        add_action('wp_ajax_quiz_ai_pro_get_user_attempts', [$this, 'handle_get_user_attempts']);
         add_action('wp_ajax_quiz_ai_pro_get_performance_data', [$this, 'handle_get_performance_data']);
         add_action('wp_ajax_quiz_ai_refresh_nonces', [$this, 'handle_refresh_nonces']);
 
@@ -4692,9 +4693,13 @@ Format de réponse JSON :
         try {
             // Get the main result data
             $result = $wpdb->get_row($wpdb->prepare("
-                SELECT r.*, q.title as quiz_title, q.description
+                SELECT r.*, q.title as quiz_title, q.description,
+                       c.comment_text, c.rating, c.created_at as comment_date
                 FROM {$wpdb->prefix}quiz_ia_results r
                 LEFT JOIN {$wpdb->prefix}quiz_ia_quizzes q ON r.quiz_id = q.id
+                LEFT JOIN {$wpdb->prefix}quiz_ia_comments c ON r.quiz_id = c.quiz_id 
+                                                            AND r.user_email = c.user_email 
+                                                            AND c.is_approved = 1
                 WHERE r.id = %d
             ", $result_id));
 
@@ -4776,12 +4781,80 @@ Format de réponse JSON :
                 'time_taken_formatted' => $time_taken_formatted,
                 'completed_at' => $result->completed_at,
                 'attempt_number' => isset($result->attempt_number) ? intval($result->attempt_number) : 1,
-                'questions_details' => $questions_details
+                'questions_details' => $questions_details,
+                'comment_text' => $result->comment_text,
+                'rating' => $result->rating ? intval($result->rating) : null,
+                'comment_date' => $result->comment_date
             );
 
             wp_send_json_success($response_data);
         } catch (Exception $e) {
             error_log('Quiz IA Pro - Error getting result details: ' . $e->getMessage());
+            wp_send_json_error('Database error occurred');
+        }
+    }
+
+    /**
+     * Handle getting all attempts for a specific user and quiz
+     */
+    public function handle_get_user_attempts()
+    {
+        // Verify nonce
+        if (!wp_verify_nonce($_POST['security'], 'quiz_ai_pro_nonce')) {
+            wp_send_json_error('Security check failed');
+            return;
+        }
+
+        // Check permissions
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+
+        $user_email = sanitize_email($_POST['user_email']);
+        $quiz_id = intval($_POST['quiz_id']);
+
+        if (!$user_email || !$quiz_id) {
+            wp_send_json_error('Invalid parameters');
+            return;
+        }
+
+        try {
+            $attempts = quiz_ai_pro_get_user_quiz_attempts($user_email, $quiz_id);
+
+            if (!$attempts) {
+                wp_send_json_error('No attempts found');
+                return;
+            }
+
+            // Format the attempts data
+            $formatted_attempts = array();
+            foreach ($attempts as $attempt) {
+                $formatted_attempts[] = array(
+                    'id' => $attempt->id,
+                    'percentage' => round(floatval($attempt->percentage), 1),
+                    'correct_answers' => intval($attempt->correct_answers),
+                    'total_questions' => intval($attempt->total_questions),
+                    'time_spent' => intval($attempt->time_spent),
+                    'time_spent_formatted' => quiz_ai_format_time_duration($attempt->time_spent),
+                    'submitted_at' => $attempt->submitted_at,
+                    'submitted_at_formatted' => human_time_diff(strtotime($attempt->submitted_at), current_time('timestamp')) . ' ago',
+                    'attempt_number' => intval($attempt->attempt_number),
+                    'quiz_title' => $attempt->quiz_title,
+                    'comment_text' => $attempt->comment_text,
+                    'rating' => $attempt->rating ? intval($attempt->rating) : null,
+                    'comment_date' => $attempt->comment_date
+                );
+            }
+
+            wp_send_json_success(array(
+                'attempts' => $formatted_attempts,
+                'total_attempts' => count($formatted_attempts),
+                'user_name' => $attempts[0]->user_name,
+                'quiz_title' => $attempts[0]->quiz_title
+            ));
+        } catch (Exception $e) {
+            error_log('Quiz IA Pro - Error getting user attempts: ' . $e->getMessage());
             wp_send_json_error('Database error occurred');
         }
     }

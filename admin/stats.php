@@ -26,15 +26,6 @@ $all_quizzes = $wpdb->get_results(
     "SELECT id, title FROM {$wpdb->prefix}quiz_ia_quizzes WHERE status = 'published' ORDER BY title"
 );
 
-// Helper function to format time
-function format_time_duration($seconds)
-{
-    if (!$seconds || $seconds <= 0) return '--';
-    $minutes = floor($seconds / 60);
-    $seconds = $seconds % 60;
-    return sprintf('%d:%02d', $minutes, $seconds);
-}
-
 // Helper function to get score badge class
 function get_score_badge_class($percentage)
 {
@@ -114,12 +105,12 @@ function get_score_badge_class($percentage)
                 </div>
                 <div class="stats-card-content">
                     <h3>Temps Moyen</h3>
-                    <div class="stats-number"><?php echo format_time_duration($detailed_stats['average_time']); ?></div>
+                    <div class="stats-number"><?php echo quiz_ai_format_time_duration($detailed_stats['average_time']); ?></div>
                     <div class="stats-change <?php echo $detailed_stats['time_change'] <= 0 ? 'positive' : 'negative'; ?>">
                         <?php if ($detailed_stats['time_change'] > 0): ?>
-                            +<?php echo format_time_duration(abs($detailed_stats['time_change'])); ?> ce mois
+                            +<?php echo quiz_ai_format_time_duration(abs($detailed_stats['time_change'])); ?> ce mois
                         <?php elseif ($detailed_stats['time_change'] < 0): ?>
-                            -<?php echo format_time_duration(abs($detailed_stats['time_change'])); ?> ce mois
+                            -<?php echo quiz_ai_format_time_duration(abs($detailed_stats['time_change'])); ?> ce mois
                         <?php else: ?>
                             Stable ce mois
                         <?php endif; ?>
@@ -200,9 +191,9 @@ function get_score_badge_class($percentage)
                                 <tr>
                                     <th scope="col" class="manage-column column-participant">Participant</th>
                                     <th scope="col" class="manage-column column-quiz">Quiz</th>
-                                    <th scope="col" class="manage-column column-score">Score</th>
+                                    <th scope="col" class="manage-column column-score">Meilleur Score</th>
                                     <th scope="col" class="manage-column column-time">Temps</th>
-                                    <th scope="col" class="manage-column column-attempts">Tentative</th>
+                                    <th scope="col" class="manage-column column-attempts">Tentatives</th>
                                     <th scope="col" class="manage-column column-date">Date</th>
                                     <th scope="col" class="manage-column column-actions">Actions</th>
                                 </tr>
@@ -246,7 +237,7 @@ function get_score_badge_class($percentage)
                                             </span>
                                         </td>
                                         <td class="time column-time">
-                                            <span class="time-duration"><?php echo format_time_duration($result->time_spent); ?></span>
+                                            <span class="time-duration"><?php echo quiz_ai_format_time_duration($result->time_spent); ?></span>
                                         </td>
                                         <td class="attempts column-attempts">
                                             <span class="attempts-count"><?php echo esc_html($result->attempt_number); ?></span>
@@ -257,11 +248,12 @@ function get_score_badge_class($percentage)
                                             </abbr>
                                         </td>
                                         <td class="actions column-actions">
-                                            <a href="#" class="button button-small view-details-btn"
-                                                data-result-id="<?php echo esc_attr($result->id); ?>"
+                                            <a href="#" class="button button-small view-user-attempts-btn"
+                                                data-user-email="<?php echo esc_attr($result->email); ?>"
                                                 data-participant="<?php echo esc_attr($student_name); ?>"
-                                                data-quiz-title="<?php echo esc_attr($result->quiz_title); ?>">
-                                                Voir détails
+                                                data-quiz-title="<?php echo esc_attr($result->quiz_title); ?>"
+                                                data-quiz-id="<?php echo esc_attr($result->quiz_id); ?>">
+                                                Voir détails (<?php echo esc_html($result->attempt_number); ?> tentative<?php echo $result->attempt_number > 1 ? 's' : ''; ?>)
                                             </a>
                                         </td>
                                     </tr>
@@ -313,12 +305,28 @@ function get_score_badge_class($percentage)
     </div>
 </div>
 
-<!-- Modal for Result Details -->
+<!-- Modal for User Attempts -->
+<div id="user-attempts-modal" class="quiz-modal" style="display: none;">
+    <div class="quiz-modal-overlay"></div>
+    <div class="quiz-modal-content">
+        <div class="quiz-modal-header">
+            <h2>Tentatives de l'Utilisateur</h2>
+            <button type="button" class="quiz-modal-close">&times;</button>
+        </div>
+        <div class="quiz-modal-body">
+            <div id="user-attempts-content">
+                <div class="loading">Chargement des tentatives...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Individual Result Details -->
 <div id="result-details-modal" class="quiz-modal" style="display: none;">
     <div class="quiz-modal-overlay"></div>
     <div class="quiz-modal-content">
         <div class="quiz-modal-header">
-            <h2>Détails du Résultat</h2>
+            <h2>Détails de la Tentative</h2>
             <button type="button" class="quiz-modal-close">&times;</button>
         </div>
         <div class="quiz-modal-body">
@@ -463,6 +471,120 @@ function get_score_badge_class($percentage)
         background: #f8d7da;
         color: #721c24;
     }
+
+    .attempts-overview {
+        margin-bottom: 20px;
+    }
+
+    .attempts-header {
+        background: #f9f9f9;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        border-left: 4px solid #0073aa;
+    }
+
+    .attempts-header h3 {
+        margin: 0 0 10px 0;
+        color: #333;
+    }
+
+    .attempts-header p {
+        margin: 5px 0;
+        color: #666;
+    }
+
+    .attempts-table-container {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .attempts-table {
+        margin: 0;
+    }
+
+    .attempts-table th,
+    .attempts-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+
+    .attempts-table th {
+        background: #f9f9f9;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .attempts-table tbody tr:hover {
+        background: #f9f9f9;
+    }
+
+    .result-details-navigation {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .back-to-attempts-btn {
+        background: #0073aa;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .back-to-attempts-btn:hover {
+        background: #005a87;
+        color: white;
+    }
+
+    .user-comment-section {
+        margin: 20px 0;
+        padding: 20px 0;
+        border-top: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .user-comment-section h3 {
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    .user-comment-card {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-left: 4px solid #007cba;
+        border-radius: 6px;
+        padding: 15px;
+    }
+
+    .comment-text {
+        font-style: italic;
+        margin-bottom: 10px;
+        line-height: 1.5;
+        color: #495057;
+    }
+
+    .comment-rating {
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .comment-rating {
+        color: #ffc107;
+    }
+
+    .comment-date {
+        font-size: 12px;
+        color: #6c757d;
+    }
 </style>
 
 <!-- Chart.js Library -->
@@ -470,15 +592,52 @@ function get_score_badge_class($percentage)
 
 <script>
     jQuery(document).ready(function($) {
-        // Handle "Voir détails" button click
-        $(document).on('click', '.view-details-btn', function(e) {
+        // Handle "Voir détails" button click to show all user attempts
+        $(document).on('click', '.view-user-attempts-btn', function(e) {
+            e.preventDefault();
+
+            const userEmail = $(this).data('user-email');
+            const quizId = $(this).data('quiz-id');
+            const participant = $(this).data('participant');
+            const quizTitle = $(this).data('quiz-title');
+
+            // Show modal
+            $('#user-attempts-modal').show();
+            $('#user-attempts-content').html('<div class="loading">Chargement des tentatives...</div>');
+
+            // Load user attempts via AJAX
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'quiz_ai_pro_get_user_attempts',
+                    user_email: userEmail,
+                    quiz_id: quizId,
+                    security: '<?php echo wp_create_nonce('quiz_ai_pro_nonce'); ?>'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        displayUserAttempts(response.data, participant, quizTitle);
+                    } else {
+                        $('#user-attempts-content').html('<div class="error">Erreur lors du chargement des tentatives: ' + response.data + '</div>');
+                    }
+                },
+                error: function() {
+                    $('#user-attempts-content').html('<div class="error">Erreur de connexion lors du chargement des tentatives.</div>');
+                }
+            });
+        });
+
+        // Handle individual attempt details
+        $(document).on('click', '.view-attempt-details-btn', function(e) {
             e.preventDefault();
 
             const resultId = $(this).data('result-id');
             const participant = $(this).data('participant');
             const quizTitle = $(this).data('quiz-title');
 
-            // Show modal
+            // Hide attempts modal and show details modal
+            $('#user-attempts-modal').hide();
             $('#result-details-modal').show();
             $('#result-details-content').html('<div class="loading">Chargement des détails...</div>');
 
@@ -504,65 +663,163 @@ function get_score_badge_class($percentage)
             });
         });
 
-        // Close modal
+        // Close modals
         $(document).on('click', '.quiz-modal-close, .quiz-modal-overlay', function() {
-            $('#result-details-modal').hide();
+            $('.quiz-modal').hide();
         });
+
+        // Back to attempts list
+        $(document).on('click', '.back-to-attempts-btn', function(e) {
+            e.preventDefault();
+            $('#result-details-modal').hide();
+            $('#user-attempts-modal').show();
+        });
+
+        // Function to display user attempts list
+        function displayUserAttempts(data, participant, quizTitle) {
+            let html = `
+                <div class="attempts-overview">
+                    <div class="attempts-header">
+                        <h3>${participant}</h3>
+                        <p><strong>Quiz:</strong> ${quizTitle}</p>
+                        <p><strong>Total des tentatives:</strong> ${data.total_attempts}</p>
+                    </div>
+                    
+                    <div class="attempts-table-container">
+                        <table class="wp-list-table widefat fixed striped attempts-table">
+                            <thead>
+                                <tr>
+                                    <th>Tentative</th>
+                                    <th>Score</th>
+                                    <th>Temps</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            data.attempts.forEach((attempt, index) => {
+                const scoreClass = attempt.percentage >= 80 ? 'score-excellent' :
+                    attempt.percentage >= 60 ? 'score-good' : 'score-average';
+
+                html += `
+                    <tr>
+                        <td><strong>#${attempt.attempt_number}</strong></td>
+                        <td>
+                            <span class="score-badge ${scoreClass}">
+                                ${attempt.percentage}% (${attempt.correct_answers}/${attempt.total_questions})
+                            </span>
+                        </td>
+                        <td>${attempt.time_spent_formatted}</td>
+                        <td>
+                            ${attempt.submitted_at_formatted}
+                            ${attempt.comment_text ? `<br><small style="color: #666;"><em>💬 Commentaire disponible</em></small>` : ''}
+                        </td>
+                        <td>
+                            <button class="button button-small view-attempt-details-btn"
+                                    data-result-id="${attempt.id}"
+                                    data-participant="${participant}"
+                                    data-quiz-title="${quizTitle}">
+                                Voir détails
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            $('#user-attempts-content').html(html);
+        }
 
         // Function to display result details
         function displayResultDetails(data, participant, quizTitle) {
-            const html = `
-            <div class="result-details-grid">
-                <div class="result-detail-card">
-                    <h4>Participant</h4>
-                    <div class="value">${participant}</div>
-                </div>
-                <div class="result-detail-card">
-                    <h4>Quiz</h4>
-                    <div class="value">${quizTitle}</div>
-                </div>
-                <div class="result-detail-card">
-                    <h4>Score Final</h4>
-                    <div class="value">${data.percentage}% (${data.correct_answers}/${data.total_questions})</div>
-                </div>
-                <div class="result-detail-card">
-                    <h4>Temps Passé</h4>
-                    <div class="value">${data.time_taken_formatted || data.time_taken || '--'}</div>
-                </div>
-                <div class="result-detail-card">
-                    <h4>Date de Soumission</h4>
-                    <div class="value">${data.completed_at ? new Date(data.completed_at).toLocaleString('fr-FR') : '--'}</div>
-                </div>
-                <div class="result-detail-card">
-                    <h4>Tentative</h4>
-                    <div class="value">#${data.attempt_number}</div>
-                </div>
-            </div>
-            
-            <div class="questions-details">
-                <h3>Détail des Réponses</h3>
-                ${data.questions_details && data.questions_details.length > 0 ? data.questions_details.map((question, index) => `
-                    <div class="question-result ${question.is_correct ? 'correct' : 'incorrect'}">
-                        <div class="question-title">
-                            Question ${index + 1}: ${question.question_text}
+            let commentsSection = '';
+            if (data.comment_text) {
+                commentsSection = `
+                    <div class="user-comment-section">
+                        <h3>💬 Commentaire de l'utilisateur</h3>
+                        <div class="user-comment-card">
+                            <div class="comment-text">${data.comment_text}</div>
+                            ${data.rating ? `
+                                <div class="comment-rating">
+                                    <strong>Note:</strong> ${'★'.repeat(data.rating)}${'☆'.repeat(5-data.rating)} (${data.rating}/5)
+                                </div>
+                            ` : ''}
+                            ${data.comment_date ? `
+                                <div class="comment-date">
+                                    <small>Posté le ${new Date(data.comment_date).toLocaleString('fr-FR')}</small>
+                                </div>
+                            ` : ''}
                         </div>
-                        <div class="answer-given ${question.is_correct ? 'correct' : 'incorrect'}">
-                            <strong>Réponse donnée:</strong> ${question.user_answer || 'Aucune réponse'}
-                        </div>
-                        ${question.correct_answer ? `
-                            <div class="answer-given correct">
-                                <strong>Réponse correcte:</strong> ${question.correct_answer}
-                            </div>
-                        ` : ''}
-                        ${question.explanation ? `
-                            <div style="margin-top: 10px; font-style: italic; color: #666;">
-                                <strong>Explication:</strong> ${question.explanation}
-                            </div>
-                        ` : ''}
                     </div>
-                `).join('') : '<p>Aucun détail de question disponible.</p>'}
-            </div>
-        `;
+                `;
+            }
+
+            const html = `
+                <div class="result-details-navigation">
+                    <button class="button back-to-attempts-btn">← Retour aux tentatives</button>
+                </div>
+                
+                <div class="result-details-grid">
+                    <div class="result-detail-card">
+                        <h4>Participant</h4>
+                        <div class="value">${participant}</div>
+                    </div>
+                    <div class="result-detail-card">
+                        <h4>Quiz</h4>
+                        <div class="value">${quizTitle}</div>
+                    </div>
+                    <div class="result-detail-card">
+                        <h4>Score Final</h4>
+                        <div class="value">${data.percentage}% (${data.correct_answers}/${data.total_questions})</div>
+                    </div>
+                    <div class="result-detail-card">
+                        <h4>Temps Passé</h4>
+                        <div class="value">${data.time_taken_formatted || data.time_taken || '--'}</div>
+                    </div>
+                    <div class="result-detail-card">
+                        <h4>Date de Soumission</h4>
+                        <div class="value">${data.completed_at ? new Date(data.completed_at).toLocaleString('fr-FR') : '--'}</div>
+                    </div>
+                    <div class="result-detail-card">
+                        <h4>Tentative</h4>
+                        <div class="value">#${data.attempt_number}</div>
+                    </div>
+                </div>
+                
+                ${commentsSection}
+                
+                <div class="questions-details">
+                    <h3>Détail des Réponses</h3>
+                    ${data.questions_details && data.questions_details.length > 0 ? data.questions_details.map((question, index) => `
+                        <div class="question-result ${question.is_correct ? 'correct' : 'incorrect'}">
+                            <div class="question-title">
+                                Question ${index + 1}: ${question.question_text}
+                            </div>
+                            <div class="answer-given ${question.is_correct ? 'correct' : 'incorrect'}">
+                                <strong>Réponse donnée:</strong> ${question.user_answer || 'Aucune réponse'}
+                            </div>
+                            ${question.correct_answer ? `
+                                <div class="answer-given correct">
+                                    <strong>Réponse correcte:</strong> ${question.correct_answer}
+                                </div>
+                            ` : ''}
+                            ${question.explanation ? `
+                                <div style="margin-top: 10px; font-style: italic; color: #666;">
+                                    <strong>Explication:</strong> ${question.explanation}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('') : '<p>Aucun détail de question disponible.</p>'}
+                </div>
+            `;
 
             $('#result-details-content').html(html);
         }

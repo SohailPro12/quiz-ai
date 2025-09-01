@@ -1896,7 +1896,7 @@ function quiz_ai_pro_get_popular_quizzes($limit = 10)
 }
 
 /**
- * Get detailed quiz results for stats table
+ * Get detailed quiz results for stats table - grouped by user (best attempt per quiz)
  */
 function quiz_ai_pro_get_detailed_results($period = '30days', $quiz_id = 0, $search = '', $limit = 20, $offset = 0)
 {
@@ -1905,32 +1905,94 @@ function quiz_ai_pro_get_detailed_results($period = '30days', $quiz_id = 0, $sea
     $quizzes_table = $wpdb->prefix . 'quiz_ia_quizzes';
     $results_table = $wpdb->prefix . 'quiz_ia_results';
 
-    $where_clause = "WHERE 1=1";
+    $main_where_conditions = ["1=1"];
+    $sub_where_conditions = ["1=1"];
     $params = [];
 
-    // Add period filter
+    // Add period filter to subquery
     $date_condition = quiz_ai_pro_get_date_condition($period);
     if ($date_condition) {
-        $where_clause .= str_replace('r.submitted_at', 'r.completed_at', $date_condition);
+        $period_condition = str_replace('r.submitted_at', 'r1.completed_at', $date_condition);
+        $sub_where_conditions[] = ltrim($period_condition, ' AND');
     }
 
-    // Add quiz filter
+    // Add quiz filter to both queries
     if ($quiz_id > 0) {
-        $where_clause .= " AND r.quiz_id = %d";
+        $main_where_conditions[] = "r.quiz_id = %d";
+        $sub_where_conditions[] = "r1.quiz_id = %d";
         $params[] = $quiz_id;
+        $params[] = $quiz_id; // We need it twice for both queries
     }
 
-    // Add search filter (now searches in both name and email with one input)
+    // Add search filter to main query
     if (!empty($search)) {
-        $where_clause .= " AND (r.user_name LIKE %s OR r.user_email LIKE %s OR q.title LIKE %s)";
+        $main_where_conditions[] = "(r.user_name LIKE %s OR r.user_email LIKE %s OR q.title LIKE %s)";
         $search_term = '%' . $wpdb->esc_like($search) . '%';
         $params[] = $search_term;
         $params[] = $search_term;
         $params[] = $search_term;
     }
 
+    $main_where_clause = "WHERE " . implode(" AND ", $main_where_conditions);
+    $sub_where_clause = "WHERE " . implode(" AND ", $sub_where_conditions);
+
     $params[] = $limit;
     $params[] = $offset;
+
+    // Modified query to group by user (email) and show their best score and total attempts
+    $query = "SELECT r.id,
+                     r.user_email,
+                     r.user_name,
+                     r.quiz_id,
+                     best_stats.percentage,
+                     best_stats.attempt_number,
+                     best_stats.time_spent,
+                     best_stats.submitted_at,
+                     best_stats.correct_answers,
+                     best_stats.total_questions,
+                     q.title as quiz_title,
+                     SUBSTRING_INDEX(r.user_name, ' ', 1) as first_name,
+                     CASE 
+                         WHEN LOCATE(' ', r.user_name) > 0 
+                         THEN SUBSTRING(r.user_name, LOCATE(' ', r.user_name) + 1)
+                         ELSE ''
+                     END as last_name,
+                     r.user_email as email
+              FROM $results_table r
+              JOIN $quizzes_table q ON r.quiz_id = q.id
+              JOIN (
+                  SELECT r1.user_email,
+                         r1.quiz_id,
+                         MAX(r1.percentage) as percentage,
+                         COUNT(*) as attempt_number,
+                         MIN(r1.time_taken) as time_spent,
+                         MAX(r1.completed_at) as submitted_at,
+                         MAX(r1.correct_answers) as correct_answers,
+                         MAX(r1.total_questions) as total_questions
+                  FROM $results_table r1
+                  $sub_where_clause
+                  GROUP BY r1.user_email, r1.quiz_id
+              ) best_stats ON r.user_email = best_stats.user_email 
+                           AND r.quiz_id = best_stats.quiz_id 
+                           AND r.percentage = best_stats.percentage
+              $main_where_clause
+              GROUP BY r.user_email, r.quiz_id
+              ORDER BY best_stats.submitted_at DESC
+              LIMIT %d OFFSET %d";
+
+    return $wpdb->get_results($wpdb->prepare($query, ...$params));
+}
+
+/**
+ * Get all attempts for a specific user and quiz (for detail view)
+ */
+function quiz_ai_pro_get_user_quiz_attempts($user_email, $quiz_id)
+{
+    global $wpdb;
+
+    $quizzes_table = $wpdb->prefix . 'quiz_ia_quizzes';
+    $results_table = $wpdb->prefix . 'quiz_ia_results';
+    $comments_table = $wpdb->prefix . 'quiz_ia_comments';
 
     $query = "SELECT r.id, 
                      r.percentage, 
@@ -1949,14 +2011,19 @@ function quiz_ai_pro_get_detailed_results($period = '30days', $quiz_id = 0, $sea
                          THEN SUBSTRING(r.user_name, LOCATE(' ', r.user_name) + 1)
                          ELSE ''
                      END as last_name,
-                     r.user_email as email
+                     r.user_email as email,
+                     c.comment_text,
+                     c.rating,
+                     c.created_at as comment_date
               FROM $results_table r
               JOIN $quizzes_table q ON r.quiz_id = q.id
-              $where_clause
-              ORDER BY r.completed_at DESC
-              LIMIT %d OFFSET %d";
+              LEFT JOIN $comments_table c ON r.quiz_id = c.quiz_id 
+                                         AND r.user_email = c.user_email 
+                                         AND c.is_approved = 1
+              WHERE r.user_email = %s AND r.quiz_id = %d
+              ORDER BY r.completed_at DESC";
 
-    return $wpdb->get_results($wpdb->prepare($query, ...$params));
+    return $wpdb->get_results($wpdb->prepare($query, $user_email, $quiz_id));
 }
 
 /**
@@ -1985,7 +2052,8 @@ function quiz_ai_pro_get_results_count($search = '', $quiz_id = 0)
         $params[] = $quiz_id;
     }
 
-    $query = "SELECT COUNT(*)
+    // Count distinct user-quiz combinations instead of total results
+    $query = "SELECT COUNT(DISTINCT CONCAT(r.user_email, '-', r.quiz_id))
               FROM $results_table r
               JOIN $quizzes_table q ON r.quiz_id = q.id
               $where_clause";
