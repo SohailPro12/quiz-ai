@@ -1727,9 +1727,24 @@ Format de réponse JSON :
         $prompt .= '      "options": ["Option A", "Option B", "Option C", "Option D"],' . "\n";
         $prompt .= '      "correct_answer": "Option A",' . "\n";
         $prompt .= '      "explanation": "Explication de la réponse"' . "\n";
+        $prompt .= '    },' . "\n";
+        $prompt .= '    {' . "\n";
+        $prompt .= '      "question": "Affirmation à évaluer",' . "\n";
+        $prompt .= '      "type": "true_false",' . "\n";
+        $prompt .= '      "correct_answer": "true",' . "\n";
+        $prompt .= '      "explanation": "Explication de pourquoi c\'est vrai ou faux"' . "\n";
         $prompt .= '    }' . "\n";
         $prompt .= '  ]' . "\n";
-        $prompt .= "}";
+        $prompt .= "}\n\n";
+        $prompt .= "IMPORTANT pour les questions true_false:\n";
+        $prompt .= "- Utilise 'true' ou 'false' dans correct_answer\n";
+        $prompt .= "- La question doit être une affirmation à évaluer\n";
+        $prompt .= "- Assure-toi que l'affirmation peut clairement être vraie ou fausse\n\n";
+        $prompt .= "TYPES DE QUESTIONS SUPPORTÉS:\n";
+        $prompt .= "- qcm: Questions à choix multiples (4 options)\n";
+        $prompt .= "- true_false: Questions vrai/faux\n";
+        $prompt .= "- open: Questions ouvertes à réponse libre\n";
+        $prompt .= "- fill_blank: Questions à compléter avec des blancs";
 
         error_log("FULL PROMPT SENT TO AI:");
         error_log($prompt);
@@ -1909,12 +1924,52 @@ Format de réponse JSON :
 
             // Handle different question types
             if ($q['type'] === 'qcm' && isset($q['options'])) {
+                // Old format with options array and correct_answer
                 foreach ($q['options'] as $option) {
                     $formatted_question['answers'][] = array(
                         'text' => $option,
                         'correct' => ($option === $q['correct_answer'])
                     );
                 }
+            } elseif (isset($q['answers']) && is_array($q['answers'])) {
+                // New format with answers array
+                foreach ($q['answers'] as $answer) {
+                    $formatted_question['answers'][] = array(
+                        'text' => $answer['text'],
+                        'correct' => $answer['correct']
+                    );
+                }
+            } elseif ($q['type'] === 'true_false') {
+                // For true/false questions, create both options
+                $correct_answer = $q['correct_answer'] ?? '';
+                $is_true_correct = (strtolower($correct_answer) === 'true' ||
+                    strtolower($correct_answer) === 'vrai' ||
+                    $correct_answer === '1');
+
+                // Change the type to match what the editor expects
+                $formatted_question['type'] = 'true-false';
+
+                $formatted_question['answers'][] = array(
+                    'text' => 'Vrai',
+                    'correct' => $is_true_correct
+                );
+                $formatted_question['answers'][] = array(
+                    'text' => 'Faux',
+                    'correct' => !$is_true_correct
+                );
+            } elseif ($q['type'] === 'open') {
+                // Convert 'open' to 'text' for consistency with editor
+                $formatted_question['type'] = 'text';
+                $formatted_question['answers'][] = array(
+                    'text' => $q['correct_answer'] ?? '',
+                    'correct' => true
+                );
+            } elseif ($q['type'] === 'fill_blank') {
+                // Keep fill_blank as is - editor supports this
+                $formatted_question['answers'][] = array(
+                    'text' => $q['correct_answer'] ?? '',
+                    'correct' => true
+                );
             } else {
                 // For open questions or other types
                 $formatted_question['answers'][] = array(
@@ -2626,7 +2681,7 @@ Format de réponse JSON :
                         ];
                         $wpdb->insert($answers_table, $answer_data);
                     }
-                } elseif ($question_type === 'true_false') {
+                } elseif ($question_type === 'true-false') {
                     $true_false_answers = [
                         ['text' => 'Vrai', 'correct' => true],
                         ['text' => 'Faux', 'correct' => false]
@@ -3025,7 +3080,7 @@ Format de réponse JSON :
                 } elseif ($question_type === 'text') {
                     $preview_html .= '
                         <textarea placeholder="Écrivez votre réponse ici..." style="width: 100%; min-height: 120px; padding: 18px; border: 2px solid #e9ecef; border-radius: 12px; font-size: 16px; font-family: inherit; resize: vertical; transition: border-color 0.3s ease;" disabled></textarea>';
-                } elseif ($question_type === 'true_false') {
+                } elseif ($question_type === 'true-false') {
                     $preview_html .= '
                         <label class="answer-option" style="display: block; background: #f8f9fa; margin: 12px 0; padding: 18px 24px; border-radius: 12px; cursor: pointer; transition: all 0.3s ease;">
                             <input type="radio" name="question_' . ($index + 1) . '" value="true" style="margin-right: 15px; transform: scale(1.2);" disabled>
