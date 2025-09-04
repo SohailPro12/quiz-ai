@@ -462,11 +462,11 @@ if (!empty($category_ids)) {
                                 <div class="question-user-view">
                                     <div class="question-header-user">
                                         <h3 class="question-title editable-text" data-field="question_text">
-                                            <?php echo esc_html($question->question_text); ?>
+                                            <?php echo wp_kses_post($question->question_text); ?>
                                         </h3>
                                         <?php if (!empty($question->question_description)): ?>
                                             <p class="question-description editable-text" data-field="question_description">
-                                                <?php echo esc_html($question->question_description); ?>
+                                                <?php echo wp_kses_post($question->question_description); ?>
                                             </p>
                                         <?php endif; ?>
                                     </div>
@@ -626,7 +626,7 @@ if (!empty($category_ids)) {
                                                 </button>
                                             </div>
                                             <div class="explanation-content editable-text" data-field="explanation">
-                                                <?php echo esc_html($question->explanation); ?>
+                                                <?php echo wp_kses_post($question->explanation); ?>
                                             </div>
                                         </div>
                                     <?php else: ?>
@@ -667,9 +667,208 @@ if (!empty($category_ids)) {
     </div>
 </div>
 
+<!-- Question Type Selection Modal -->
+<div id="question-type-modal" class="quiz-modal" style="display: none;">
+    <div class="quiz-modal-content">
+        <div class="quiz-modal-header">
+            <h2>Choisir le type de question</h2>
+            <span class="quiz-modal-close">&times;</span>
+        </div>
+        <div class="quiz-modal-body">
+            <p>Sélectionnez le type de question que vous souhaitez ajouter :</p>
+            <div class="question-type-grid">
+                <div class="question-type-option" data-type="qcm">
+                    <div class="question-type-icon">
+                        <span class="dashicons dashicons-yes"></span>
+                    </div>
+                    <h3>QCM</h3>
+                    <p>Question à choix multiples avec une seule bonne réponse</p>
+                </div>
+                <div class="question-type-option" data-type="multiple-choice">
+                    <div class="question-type-icon">
+                        <span class="dashicons dashicons-forms"></span>
+                    </div>
+                    <h3>Choix Multiple</h3>
+                    <p>Question avec plusieurs bonnes réponses possibles</p>
+                </div>
+                <div class="question-type-option" data-type="true-false">
+                    <div class="question-type-icon">
+                        <span class="dashicons dashicons-editor-help"></span>
+                    </div>
+                    <h3>Vrai/Faux</h3>
+                    <p>Question simple avec deux options : Vrai ou Faux</p>
+                </div>
+                <div class="question-type-option" data-type="fill_blank">
+                    <div class="question-type-icon">
+                        <span class="dashicons dashicons-edit"></span>
+                    </div>
+                    <h3>Texte à Compléter</h3>
+                    <p>Question avec des espaces à remplir dans le texte</p>
+                </div>
+                <div class="question-type-option" data-type="text">
+                    <div class="question-type-icon">
+                        <span class="dashicons dashicons-text"></span>
+                    </div>
+                    <h3>Texte Libre</h3>
+                    <p>Question ouverte avec réponse en texte libre</p>
+                </div>
+                <div class="question-type-option" data-type="essay">
+                    <div class="question-type-icon">
+                        <span class="dashicons dashicons-text-page"></span>
+                    </div>
+                    <h3>Essai</h3>
+                    <p>Question longue nécessitant une réponse développée</p>
+                </div>
+            </div>
+        </div>
+        <div class="quiz-modal-footer">
+            <button type="button" class="button button-secondary quiz-modal-cancel">Annuler</button>
+        </div>
+    </div>
+</div>
+
 <style>
     .quiz-editor-container {
         max-width: 1200px;
+    }
+
+    /* Question Type Modal Styles */
+    .quiz-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 100000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .quiz-modal-content {
+        background: white;
+        border-radius: 8px;
+        max-width: 800px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .quiz-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 30px;
+        border-bottom: 1px solid #ddd;
+        background: #f9f9f9;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .quiz-modal-header h2 {
+        margin: 0;
+        color: #333;
+        font-size: 24px;
+    }
+
+    .quiz-modal-close {
+        font-size: 28px;
+        font-weight: bold;
+        color: #aaa;
+        cursor: pointer;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+
+    .quiz-modal-close:hover {
+        color: #333;
+    }
+
+    .quiz-modal-body {
+        padding: 30px;
+    }
+
+    .quiz-modal-body p {
+        margin-bottom: 20px;
+        font-size: 16px;
+        color: #666;
+    }
+
+    .question-type-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .question-type-option {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .question-type-option:hover {
+        border-color: #0073aa;
+        box-shadow: 0 4px 12px rgba(0, 115, 170, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .question-type-option.selected {
+        border-color: #0073aa;
+        background: #f0f8ff;
+        box-shadow: 0 4px 12px rgba(0, 115, 170, 0.2);
+    }
+
+    .question-type-icon {
+        font-size: 32px;
+        color: #0073aa;
+        margin-bottom: 10px;
+    }
+
+    .question-type-option h3 {
+        margin: 10px 0 8px 0;
+        font-size: 18px;
+        color: #333;
+    }
+
+    .question-type-option p {
+        margin: 0;
+        font-size: 14px;
+        color: #666;
+        line-height: 1.4;
+    }
+
+    .quiz-modal-footer {
+        padding: 20px 30px;
+        border-top: 1px solid #ddd;
+        text-align: right;
+        background: #f9f9f9;
+        border-radius: 0 0 8px 8px;
+    }
+
+    .quiz-modal-footer .button {
+        margin-left: 10px;
+    }
+
+    /* Text Answer Info Styles */
+    .text-answer-info {
+        padding: 20px;
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        text-align: center;
+        margin: 10px 0;
+    }
+
+    .text-answer-info p {
+        margin: 0;
+        color: #6c757d;
+        font-style: italic;
     }
 
     .quiz-status-info {
@@ -2460,33 +2659,250 @@ if (!empty($category_ids)) {
             showNotification('Section explication ajoutée', 'success');
         });
 
-        // Add new question
+        // Add new question - show type selection modal first
         $(document).on('click', '.add-question-btn', function() {
-            addNewQuestion();
+            showQuestionTypeModal();
         });
 
-        // Function to add a new question
-        function addNewQuestion() {
-            const quizId = $('#quiz_id').val();
+        // Show question type selection modal
+        function showQuestionTypeModal() {
+            $('#question-type-modal').show();
+        }
+
+        // Close modal handlers
+        $(document).on('click', '.quiz-modal-close, .quiz-modal-cancel', function() {
+            $('#question-type-modal').hide();
+        });
+
+        // Close modal when clicking outside
+        $(document).on('click', '.quiz-modal', function(e) {
+            if (e.target === this) {
+                $('#question-type-modal').hide();
+            }
+        });
+
+        // Question type selection handler
+        $(document).on('click', '.question-type-option', function() {
+            // Remove previous selection
+            $('.question-type-option').removeClass('selected');
+
+            // Select this option
+            $(this).addClass('selected');
+
+            // Get the selected type
+            const selectedType = $(this).data('type');
+
+            // Hide the modal
+            $('#question-type-modal').hide();
+
+            // Add the question with the selected type
+            addNewQuestion(selectedType);
+        });
+
+        // Function to generate answers HTML based on question type
+        function generateAnswersForType(questionType) {
+            const timestamp = Date.now();
+
+            switch (questionType) {
+                case 'true-false':
+                    return `
+                        <div class="answers-list single-choice">
+                            <div class="answer-option" data-answer-id="new_${timestamp}_1" data-is-new="true">
+                                <label class="answer-label">
+                                    <input type="radio" name="question_new" value="1" disabled>
+                                    <span class="answer-letter">A.</span>
+                                    <span class="answer-text editable-text" data-field="answer_text">Vrai</span>
+                                </label>
+                                <div class="answer-actions">
+                                    <button type="button" class="button-link toggle-correct-btn" title="Marquer comme correcte">
+                                        <span class="dashicons dashicons-yes"></span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="answer-option" data-answer-id="new_${timestamp}_2" data-is-new="true">
+                                <label class="answer-label">
+                                    <input type="radio" name="question_new" value="2" disabled>
+                                    <span class="answer-letter">B.</span>
+                                    <span class="answer-text editable-text" data-field="answer_text">Faux</span>
+                                </label>
+                                <div class="answer-actions">
+                                    <button type="button" class="button-link toggle-correct-btn" title="Marquer comme correcte">
+                                        <span class="dashicons dashicons-yes"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`;
+
+                case 'fill_blank':
+                case 'text':
+                case 'essay':
+                    return `
+                        <div class="answers-list text-answer">
+                            <div class="text-answer-info">
+                                <p><em>Cette question utilise une réponse libre. Les réponses seront évaluées automatiquement par l'IA.</em></p>
+                            </div>
+                        </div>`;
+
+                case 'multiple-choice':
+                    return `
+                        <div class="answers-list multiple-choice">
+                            <div class="answer-option" data-answer-id="new_${timestamp}_1" data-is-new="true">
+                                <label class="answer-label">
+                                    <input type="checkbox" name="question_new" value="1" disabled>
+                                    <span class="answer-letter">A.</span>
+                                    <span class="answer-text editable-text" data-field="answer_text">Réponse A</span>
+                                </label>
+                                <div class="answer-actions">
+                                    <button type="button" class="button-link toggle-correct-btn" title="Marquer comme correcte">
+                                        <span class="dashicons dashicons-yes"></span>
+                                    </button>
+                                    <button type="button" class="button-link edit-answer-btn" title="Modifier cette réponse">
+                                        <span class="dashicons dashicons-edit"></span>
+                                    </button>
+                                    <button type="button" class="button-link delete-answer-btn" title="Supprimer cette réponse">
+                                        <span class="dashicons dashicons-trash"></span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="answer-option" data-answer-id="new_${timestamp}_2" data-is-new="true">
+                                <label class="answer-label">
+                                    <input type="checkbox" name="question_new" value="2" disabled>
+                                    <span class="answer-letter">B.</span>
+                                    <span class="answer-text editable-text" data-field="answer_text">Réponse B</span>
+                                </label>
+                                <div class="answer-actions">
+                                    <button type="button" class="button-link toggle-correct-btn" title="Marquer comme correcte">
+                                        <span class="dashicons dashicons-yes"></span>
+                                    </button>
+                                    <button type="button" class="button-link edit-answer-btn" title="Modifier cette réponse">
+                                        <span class="dashicons dashicons-edit"></span>
+                                    </button>
+                                    <button type="button" class="button-link delete-answer-btn" title="Supprimer cette réponse">
+                                        <span class="dashicons dashicons-trash"></span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="add-answer-section">
+                                <button type="button" class="button add-answer-btn">
+                                    <span class="dashicons dashicons-plus"></span> Ajouter une réponse
+                                </button>
+                            </div>
+                        </div>`;
+
+                default: // qcm, single-choice
+                    return `
+                        <div class="answers-list single-choice">
+                            <div class="answer-option" data-answer-id="new_${timestamp}_1" data-is-new="true">
+                                <label class="answer-label">
+                                    <input type="radio" name="question_new" value="1" disabled>
+                                    <span class="answer-letter">A.</span>
+                                    <span class="answer-text editable-text" data-field="answer_text">Réponse A</span>
+                                </label>
+                                <div class="answer-actions">
+                                    <button type="button" class="button-link toggle-correct-btn" title="Marquer comme correcte">
+                                        <span class="dashicons dashicons-yes"></span>
+                                    </button>
+                                    <button type="button" class="button-link edit-answer-btn" title="Modifier cette réponse">
+                                        <span class="dashicons dashicons-edit"></span>
+                                    </button>
+                                    <button type="button" class="button-link delete-answer-btn" title="Supprimer cette réponse">
+                                        <span class="dashicons dashicons-trash"></span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="answer-option" data-answer-id="new_${timestamp}_2" data-is-new="true">
+                                <label class="answer-label">
+                                    <input type="radio" name="question_new" value="2" disabled>
+                                    <span class="answer-letter">B.</span>
+                                    <span class="answer-text editable-text" data-field="answer_text">Réponse B</span>
+                                </label>
+                                <div class="answer-actions">
+                                    <button type="button" class="button-link toggle-correct-btn" title="Marquer comme correcte">
+                                        <span class="dashicons dashicons-yes"></span>
+                                    </button>
+                                    <button type="button" class="button-link edit-answer-btn" title="Modifier cette réponse">
+                                        <span class="dashicons dashicons-edit"></span>
+                                    </button>
+                                    <button type="button" class="button-link delete-answer-btn" title="Supprimer cette réponse">
+                                        <span class="dashicons dashicons-trash"></span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="add-answer-section">
+                                <button type="button" class="button add-answer-btn">
+                                    <span class="dashicons dashicons-plus"></span> Ajouter une réponse
+                                </button>
+                            </div>
+                        </div>`;
+            }
+        }
+
+        // Function to add a new question with specified type
+        function addNewQuestion(questionType = 'qcm') {
+            const quizId = <?php echo $quiz_id; ?>;
+
+            // Show loading state
+            showNotification('Création de la question...', 'info');
+
+            // Prepare data for AJAX call
+            const ajaxData = {
+                action: 'quiz_ai_pro_add_question',
+                quiz_id: quizId,
+                question_type: questionType,
+                nonce: '<?php echo wp_create_nonce('quiz_ai_pro_add_question'); ?>'
+            };
+
+            // Debug: log the data being sent
+            console.log('Sending AJAX data:', ajaxData);
+
+            // Use the existing AJAX action to create the question in database
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: ajaxData,
+                success: function(response) {
+                    if (response.success) {
+                        const newQuestionId = response.data.new_question_id;
+
+                        // Now create the frontend HTML with the real question ID
+                        createQuestionHTML(newQuestionId, questionType);
+
+                        showNotification('Question créée avec succès!', 'success');
+                    } else {
+                        showNotification('Erreur: ' + response.data, 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX error:', error);
+                    showNotification('Erreur de connexion', 'error');
+                }
+            });
+        }
+
+        // Function to create the question HTML in frontend
+        function createQuestionHTML(questionId, questionType) {
             const questionCount = $('.question-item').length;
             const newQuestionNumber = questionCount + 1;
 
-            // Create new question HTML
+            // Generate answers HTML based on question type
+            let answersHtml = generateAnswersForType(questionType);
+
+            // Create new question HTML with real question ID
             const newQuestionHtml = `
-                <div class="question-item user-view-style" data-question-id="0" data-is-new="true">
+                <div class="question-item user-view-style" data-question-id="${questionId}" data-is-new="false">
                     <!-- Question Header with Admin Controls -->
                     <div class="question-admin-header">
                         <div class="question-meta">
                             <span class="question-number">Question ${newQuestionNumber}</span>
                             <div class="question-type-selector">
-                                <select class="question-type-dropdown" data-question-id="0" data-original-type="qcm">
-                                    <option value="qcm" selected>QCM</option>
-                                    <option value="multiple-choice">Choix Multiple</option>
-                                    <option value="single-choice">Choix Unique</option>
-                                    <option value="true-false">Vrai/Faux</option>
-                                    <option value="fill_blank">Texte à Compléter</option>
-                                    <option value="text">Texte Libre</option>
-                                    <option value="essay">Essai</option>
+                                <select class="question-type-dropdown" data-question-id="${questionId}" data-original-type="${questionType}">
+                                    <option value="qcm" ${questionType === 'qcm' ? 'selected' : ''}>QCM</option>
+                                    <option value="multiple-choice" ${questionType === 'multiple-choice' ? 'selected' : ''}>Choix Multiple</option>
+                                    <option value="single-choice" ${questionType === 'single-choice' ? 'selected' : ''}>Choix Unique</option>
+                                    <option value="true-false" ${questionType === 'true-false' ? 'selected' : ''}>Vrai/Faux</option>
+                                    <option value="fill_blank" ${questionType === 'fill_blank' ? 'selected' : ''}>Texte à Compléter</option>
+                                    <option value="text" ${questionType === 'text' ? 'selected' : ''}>Texte Libre</option>
+                                    <option value="essay" ${questionType === 'essay' ? 'selected' : ''}>Essai</option>
                                 </select>
                             </div>
                             <span class="points-badge">1 pts</span>
@@ -2530,50 +2946,7 @@ if (!empty($category_ids)) {
 
                         <!-- Answers Section -->
                         <div class="answers-section">
-                            <div class="answers-list multiple-choice">
-                                <div class="answer-option" data-answer-id="new_${Date.now()}_1" data-is-new="true">
-                                    <label class="answer-label">
-                                        <input type="checkbox" name="question_new" value="1" disabled>
-                                        <span class="answer-letter">A.</span>
-                                        <span class="answer-text editable-text" data-field="answer_text">Réponse A</span>
-                                    </label>
-                                    <div class="answer-actions">
-                                        <button type="button" class="button-link toggle-correct-btn" title="Marquer comme correcte">
-                                            <span class="dashicons dashicons-yes"></span>
-                                        </button>
-                                        <button type="button" class="button-link edit-answer-btn" title="Modifier cette réponse">
-                                            <span class="dashicons dashicons-edit"></span>
-                                        </button>
-                                        <button type="button" class="button-link delete-answer-btn" title="Supprimer cette réponse">
-                                            <span class="dashicons dashicons-trash"></span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="answer-option" data-answer-id="new_${Date.now()}_2" data-is-new="true">
-                                    <label class="answer-label">
-                                        <input type="checkbox" name="question_new" value="2" disabled>
-                                        <span class="answer-letter">B.</span>
-                                        <span class="answer-text editable-text" data-field="answer_text">Réponse B</span>
-                                    </label>
-                                    <div class="answer-actions">
-                                        <button type="button" class="button-link toggle-correct-btn" title="Marquer comme correcte">
-                                            <span class="dashicons dashicons-yes"></span>
-                                        </button>
-                                        <button type="button" class="button-link edit-answer-btn" title="Modifier cette réponse">
-                                            <span class="dashicons dashicons-edit"></span>
-                                        </button>
-                                        <button type="button" class="button-link delete-answer-btn" title="Supprimer cette réponse">
-                                            <span class="dashicons dashicons-trash"></span>
-                                        </button>
-                                    </div>
-                                </div>
-                            
-                                <div class="add-answer-section">
-                                    <button type="button" class="button add-answer-btn">
-                                        <span class="dashicons dashicons-plus"></span> Ajouter une réponse
-                                    </button>
-                                </div>
-                            </div>
+                            ${answersHtml}
                         </div>
 
                         <!-- Explanation Section -->
@@ -2599,9 +2972,6 @@ if (!empty($category_ids)) {
 
             // Update question numbers
             updateQuestionNumbers();
-
-            // Show success notification
-            showNotification('Nouvelle question ajoutée avec succès!', 'success');
 
             // Scroll to the new question
             const newQuestion = $('.question-item').last();
@@ -2796,12 +3166,12 @@ if (!empty($category_ids)) {
 
         function markAsUnsaved() {
             hasUnsavedChanges = true;
-            $('.save-all-changes').addClass('unsaved-changes').find('span:last-child').text(' Enregistrer les Modifications (!)');
+            $('.save-all-changes').addClass('unsaved-changes');
         }
 
         function markAsSaved() {
             hasUnsavedChanges = false;
-            $('.save-all-changes').removeClass('unsaved-changes').find('span:last-child').text(' Enregistrer toutes les modifications');
+            $('.save-all-changes').removeClass('unsaved-changes');
         }
 
         // Mark as unsaved when any change is made

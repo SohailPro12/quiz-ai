@@ -2616,6 +2616,9 @@ Format de réponse JSON :
     public function handle_add_question()
     {
         try {
+            // Debug: log received POST data
+            error_log('Quiz AI Pro: handle_add_question POST data: ' . print_r($_POST, true));
+
             // Verify nonce
             if (!wp_verify_nonce($_POST['nonce'], 'quiz_ai_pro_add_question')) {
                 wp_send_json_error('Security check failed');
@@ -2628,7 +2631,7 @@ Format de réponse JSON :
                 return;
             }
 
-            $quiz_id = intval($_POST['quiz_id']);
+            $quiz_id = isset($_POST['quiz_id']) ? intval($_POST['quiz_id']) : 0;
             $question_type = sanitize_text_field($_POST['question_type'] ?? 'qcm');
 
             if (!$quiz_id) {
@@ -2663,12 +2666,26 @@ Format de réponse JSON :
                 $new_question_id = $wpdb->insert_id;
 
                 // Add default answers based on question type
-                if ($question_type === 'qcm') {
+                if ($question_type === 'qcm' || $question_type === 'single-choice') {
                     $default_answers = [
-                        ['text' => 'Option A', 'correct' => true],
-                        ['text' => 'Option B', 'correct' => false],
-                        ['text' => 'Option C', 'correct' => false],
-                        ['text' => 'Option D', 'correct' => false]
+                        ['text' => 'Réponse A', 'correct' => false],
+                        ['text' => 'Réponse B', 'correct' => false]
+                    ];
+
+                    foreach ($default_answers as $index => $answer) {
+                        $answer_data = [
+                            'question_id' => $new_question_id,
+                            'answer_text' => $answer['text'],
+                            'is_correct' => $answer['correct'] ? 1 : 0,
+                            'sort_order' => $index + 1,
+                            'created_at' => current_time('mysql')
+                        ];
+                        $wpdb->insert($answers_table, $answer_data);
+                    }
+                } elseif ($question_type === 'multiple-choice') {
+                    $default_answers = [
+                        ['text' => 'Réponse A', 'correct' => false],
+                        ['text' => 'Réponse B', 'correct' => false]
                     ];
 
                     foreach ($default_answers as $index => $answer) {
@@ -2683,7 +2700,7 @@ Format de réponse JSON :
                     }
                 } elseif ($question_type === 'true-false') {
                     $true_false_answers = [
-                        ['text' => 'Vrai', 'correct' => true],
+                        ['text' => 'Vrai', 'correct' => false],
                         ['text' => 'Faux', 'correct' => false]
                     ];
 
@@ -2698,6 +2715,7 @@ Format de réponse JSON :
                         $wpdb->insert($answers_table, $answer_data);
                     }
                 }
+                // For text-based question types (fill_blank, text, essay), no default answers are needed
 
                 wp_send_json_success(['message' => 'Question added successfully', 'new_question_id' => $new_question_id]);
             } else {
@@ -3059,7 +3077,7 @@ Format de réponse JSON :
                     <div class="question-card" data-question="' . ($index + 1) . '" style="background: white; border-radius: 16px; padding: 35px; margin-bottom: 25px; box-shadow: 0 4px 25px rgba(0,0,0,0.08); border: 2px solid #f8f9fa; transition: all 0.3s ease; ' . ($index > 0 ? 'display: none;' : '') . '">
                         
                         <div class="question-header" style="margin-bottom: 25px;">
-                            <h2 style="color: #2c3e50; font-size: 24px; font-weight: 600; margin: 0; line-height: 1.4;">' . esc_html($question_text) . '</h2>
+                            <h2 style="color: #2c3e50; font-size: 24px; font-weight: 600; margin: 0; line-height: 1.4;">' . wp_kses_post($question_text) . '</h2>
                         </div>
 
                         <div class="question-answers" style="margin-bottom: 30px;">';
@@ -3654,8 +3672,8 @@ Format de réponse JSON :
 
                     // Prepare question update data
                     $question_update_data = [
-                        'question_text' => sanitize_text_field($question_data['question_text']),
-                        'explanation' => sanitize_textarea_field($question_data['explanation'] ?? ''),
+                        'question_text' => wp_kses_post($question_data['question_text']),
+                        'explanation' => wp_kses_post($question_data['explanation'] ?? ''),
                         'points' => intval($question_data['points'] ?? 1),
                         'sort_order' => intval($question_data['question_order'] ?? 1)
                     ];

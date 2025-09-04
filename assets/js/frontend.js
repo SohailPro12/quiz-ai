@@ -318,8 +318,7 @@ jQuery(document).ready(function ($) {
           (item.ai_score !== null && item.ai_score >= 50);
 
         reviewHtml += '<div class="review-question">';
-        reviewHtml +=
-          "<h4>Q" + (i + 1) + ": " + escapeHtml(item.question) + "</h4>";
+        reviewHtml += "<h4>Q" + (i + 1) + ": " + item.question + "</h4>";
         reviewHtml +=
           '<div class="user-answer"><strong>Votre réponse:</strong> ' +
           formatUserAnswer(item) +
@@ -987,9 +986,9 @@ jQuery(document).ready(function ($) {
 
         pageHtml += `
           <div class="quiz-question-container" data-question-index="${globalIndex}">
-            <h4>Question ${globalIndex + 1} / ${questions.length}: ${escapeHtml(
+            <h4>Question ${globalIndex + 1} / ${questions.length}: ${
           question.question
-        )}</h4>
+        }</h4>
             ${
               question.image
                 ? `<div class="quiz-question-image">
@@ -1369,7 +1368,7 @@ jQuery(document).ready(function ($) {
       <ul class="quiz-result-list">`;
     result.details.forEach((item, i) => {
       resultHtml += `<li>
-        <strong>Q${i + 1}:</strong> ${escapeHtml(item.question)}<br>`;
+        <strong>Q${i + 1}:</strong> ${item.question}<br>`;
 
       // Show question image if enabled and available
       if (
@@ -1593,9 +1592,7 @@ jQuery(document).ready(function ($) {
     questions.forEach((question, index) => {
       modalContent += `
                 <div class="quiz-preview-question">
-                    <h4>Question ${index + 1}: ${escapeHtml(
-        question.question
-      )}</h4>
+                    <h4>Question ${index + 1}: ${question.question}</h4>
                     <!-- Options are intentionally hidden in preview mode -->
       `;
       // Do not render options here
