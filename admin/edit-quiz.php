@@ -564,23 +564,10 @@ if (!empty($category_ids)) {
                                                 <?php endforeach; ?>
                                             </div>
 
-                                        <?php elseif ($question->question_type === 'text' || $question->question_type === 'essay'): ?>
+                                        <?php elseif ($question->question_type === 'text' || $question->question_type === 'essay' || $question->question_type === 'open'): ?>
                                             <div class="text-answer-section">
                                                 <textarea placeholder="Réponse de l'utilisateur..." disabled class="user-answer-preview"></textarea>
-                                                <div class="correct-answer-section">
-                                                    <label><strong>Réponse(s) acceptée(s):</strong></label>
-                                                    <?php foreach ($question->answers as $answer): ?>
-                                                        <div class="text-answer-item" data-answer-id="<?php echo $answer->id; ?>">
-                                                            <input type="text" value="<?php echo esc_attr($answer->answer_text); ?>" class="editable-text" data-field="answer_text">
-                                                            <button type="button" class="button-link delete-answer-btn" title="Supprimer cette réponse">
-                                                                <span class="dashicons dashicons-trash"></span>
-                                                            </button>
-                                                        </div>
-                                                    <?php endforeach; ?>
-                                                    <button type="button" class="button add-text-answer-btn">
-                                                        <span class="dashicons dashicons-plus"></span> Ajouter une réponse acceptée
-                                                    </button>
-                                                </div>
+                                                <p><em>Cette question sera évaluée automatiquement par l'IA. Aucune réponse prédéfinie n'est nécessaire.</em></p>
                                             </div>
 
                                         <?php elseif ($question->question_type === 'fill_blank' || $question->question_type === 'text_a_completer'): ?>
@@ -2178,40 +2165,11 @@ if (!empty($category_ids)) {
 
                 case 'text':
                 case 'essay':
+                case 'open':
                     newHtml = `
                         <div class="text-answer-section">
                             <textarea placeholder="Réponse de l'utilisateur..." disabled class="user-answer-preview"></textarea>
-                            <div class="correct-answer-section">
-                                <label><strong>Réponse(s) acceptée(s):</strong></label>
-                    `;
-
-                    if (answers && answers.length > 0) {
-                        answers.forEach(function(answer) {
-                            newHtml += `
-                                <div class="text-answer-item" data-answer-id="${answer.id}">
-                                    <input type="text" value="${answer.answer_text || answer.text || ''}" class="editable-text" data-field="answer_text">
-                                    <button type="button" class="button-link delete-answer-btn" title="Supprimer cette réponse">
-                                        <span class="dashicons dashicons-trash"></span>
-                                    </button>
-                                </div>
-                            `;
-                        });
-                    } else {
-                        newHtml += `
-                            <div class="text-answer-item" data-answer-id="new_${Date.now()}">
-                                <input type="text" value="" class="editable-text" data-field="answer_text" placeholder="Réponse acceptée">
-                                <button type="button" class="button-link delete-answer-btn" title="Supprimer cette réponse">
-                                    <span class="dashicons dashicons-trash"></span>
-                                </button>
-                            </div>
-                        `;
-                    }
-
-                    newHtml += `
-                                <button type="button" class="button add-text-answer-btn">
-                                    <span class="dashicons dashicons-plus"></span> Ajouter une réponse acceptée
-                                </button>
-                            </div>
+                            <p><em>Cette question sera évaluée automatiquement par l'IA. Aucune réponse prédéfinie n'est nécessaire.</em></p>
                         </div>
                     `;
                     break;
@@ -2733,13 +2691,35 @@ if (!empty($category_ids)) {
                             </div>
                         </div>`;
 
-                case 'fill_blank':
                 case 'text':
                 case 'essay':
+                case 'open':
                     return `
-                        <div class="answers-list text-answer">
-                            <div class="text-answer-info">
-                                <p><em>Cette question utilise une réponse libre. Les réponses seront évaluées automatiquement par l'IA.</em></p>
+                        <div class="text-answer-section">
+                            <textarea placeholder="Réponse de l'utilisateur..." disabled class="user-answer-preview"></textarea>
+                            <p><em>Cette question sera évaluée automatiquement par l'IA. Aucune réponse prédéfinie n'est nécessaire.</em></p>
+                        </div>`;
+
+                case 'fill_blank':
+                    return `
+                        <div class="fill-blank-section">
+                            <div class="question-preview">
+                                <label><strong>Aperçu avec espaces à compléter:</strong></label>
+                                <div class="fill-blank-preview">Utilisez {réponse} dans le texte de la question pour créer des espaces à compléter</div>
+                            </div>
+                            <div class="fill-blank-answers">
+                                <label><strong>Réponses pour les espaces à compléter:</strong></label>
+                                <small>Format: utilisez {réponse} dans le texte de la question pour créer des espaces à compléter</small>
+                                <div class="fill-blank-answer-item" data-answer-id="new_${timestamp}_1" data-is-new="true">
+                                    <span class="blank-number">Espace 1:</span>
+                                    <input type="text" value="" class="editable-text" data-field="answer_text" placeholder="Réponse attendue">
+                                    <button type="button" class="button-link delete-answer-btn" title="Supprimer cette réponse">
+                                        <span class="dashicons dashicons-trash"></span>
+                                    </button>
+                                </div>
+                                <button type="button" class="button add-fill-blank-answer-btn">
+                                    <span class="dashicons dashicons-plus"></span> Ajouter une réponse
+                                </button>
                             </div>
                         </div>`;
 

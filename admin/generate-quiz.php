@@ -115,8 +115,6 @@ if (!defined('ABSPATH')) {
                             <label for="form_type">Type de Formulaire</label>
                             <select id="form_type" name="form_type" class="form-control">
                                 <option value="quiz">Quiz</option>
-                                <option value="poll">Sondage</option>
-                                <option value="simple_form">Formulaire Simple</option>
                             </select>
                         </div>
 

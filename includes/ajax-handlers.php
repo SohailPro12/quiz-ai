@@ -2059,6 +2059,12 @@ Format de réponse JSON :
             // error_log('[QUIZ_AI] Sauvegarde des réponses pour question ID: ' . $question_id);
             // error_log('[QUIZ_AI] Nombre de réponses: ' . count($question_data['answers']));
 
+            // For text, essay, and open questions, don't save answers as they will be evaluated by AI
+            if ($question_data['type'] === 'text' || $question_data['type'] === 'essay' || $question_data['type'] === 'open') {
+                // error_log('[QUIZ_AI] Question de type ' . $question_data['type'] . ' - pas de réponses à sauvegarder (évaluation IA)');
+                continue;
+            }
+
             foreach ($question_data['answers'] as $answer_index => $answer_data) {
                 $answer = array(
                     'question_id' => $question_id,

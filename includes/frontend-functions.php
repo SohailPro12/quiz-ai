@@ -1048,7 +1048,7 @@ function quiz_ai_pro_process_answers_securely($questions, $user_answers)
         $ai_score = null;
 
         // Handle different question types securely
-        if ($question->question_type === 'open' || $question->question_type === 'text') {
+        if ($question->question_type === 'open' || $question->question_type === 'text' || $question->question_type === 'essay') {
             // For open questions, use AI-powered scoring
             $user_answer_text = is_string($user_answer) ? wp_kses_post(trim($user_answer)) : '';
 
@@ -1061,6 +1061,11 @@ function quiz_ai_pro_process_answers_securely($questions, $user_answers)
                 $expected_answer = '';
                 if (!empty($options) && $correct_answer_index !== null && isset($options[$correct_answer_index])) {
                     $expected_answer = $options[$correct_answer_index];
+                }
+
+                // For text/essay questions without predefined answers, use question context for evaluation
+                if (empty($expected_answer) && ($question->question_type === 'text' || $question->question_type === 'essay')) {
+                    $expected_answer = 'Cette question sera évaluée selon la pertinence, la précision et la complétude de la réponse par rapport au sujet abordé.';
                 }
 
                 // Use enhanced feedback system for better AI evaluation
@@ -1309,8 +1314,10 @@ function quiz_ai_pro_process_answers_securely($questions, $user_answers)
                 : wp_kses_post($user_answer_text), // String for other types
             'correct_answer' => ($question->question_type === 'fill_blank' || $question->question_type === 'text_a_completer')
                 ? (isset($expected_answers) ? $expected_answers : [])  // Array for fill-in-the-blank
-                : (($correct_answer_index !== null && isset($options[$correct_answer_index])) ?
-                    wp_kses_post($options[$correct_answer_index]) : __('Réponse libre', 'quiz-ai-pro')),
+                : (($question->question_type === 'text' || $question->question_type === 'essay' || $question->question_type === 'open')
+                    ? ($ai_feedback ? $ai_feedback : __('Évaluée par IA', 'quiz-ai-pro'))  // For text/essay/open, show AI feedback instead
+                    : (($correct_answer_index !== null && isset($options[$correct_answer_index])) ?
+                        wp_kses_post($options[$correct_answer_index]) : __('Réponse libre', 'quiz-ai-pro'))),
             'expected_answers' => ($question->question_type === 'fill_blank' || $question->question_type === 'text_a_completer')
                 ? (isset($expected_answers) ? $expected_answers : [])  // For frontend display
                 : null,

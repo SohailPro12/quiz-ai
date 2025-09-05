@@ -482,8 +482,10 @@ function quiz_ai_pro_process_enhanced_feedback($question, $user_answer, $options
         'question' => wp_kses_post($question->question_text),
         'type' => sanitize_text_field($question_type),
         'user_answer' => wp_kses_post($user_answer_text),
-        'correct_answer' => ($correct_answer_index !== null && isset($options[$correct_answer_index])) ?
-            wp_kses_post($options[$correct_answer_index]) : __('Réponse libre', 'quiz-ai-pro'),
+        'correct_answer' => (($question_type === 'text' || $question_type === 'essay' || $question_type === 'open')
+            ? ($ai_feedback ? $ai_feedback : __('Évaluée par IA', 'quiz-ai-pro'))  // For text/essay/open, show AI feedback
+            : (($correct_answer_index !== null && isset($options[$correct_answer_index])) ?
+                wp_kses_post($options[$correct_answer_index]) : __('Réponse libre', 'quiz-ai-pro'))),
         'correct' => $is_correct,
         'ai_feedback' => $ai_feedback,
         'ai_score' => $ai_score,
@@ -569,11 +571,11 @@ function quiz_ai_pro_render_overall_course_recommendation($recommendation_data)
     // Course recommendation text with clickable link
     $html .= '<p>' . esc_html($recommendation_data['recommendation_text']) . ' ';
     $html .= '<a href="' . esc_url($recommendation_data['course_url']) . '" target="_blank" rel="noopener">';
- $html .= "'" . esc_html($recommendation_data['course_title']) . "'";
-$html .= '</a> : ' . esc_url($recommendation_data['course_url']) . '</p>';
+    $html .= "'" . esc_html($recommendation_data['course_title']) . "'";
+    $html .= '</a> : ' . esc_url($recommendation_data['course_url']) . '</p>';
 
     // Clickable button
-   // $html .= '<p><a href="' . esc_url($recommendation_data['course_url']) . '" target="_blank" rel="noopener" class="course-access-button">🔗 Accéder au cours</a></p>';
+    // $html .= '<p><a href="' . esc_url($recommendation_data['course_url']) . '" target="_blank" rel="noopener" class="course-access-button">🔗 Accéder au cours</a></p>';
 
     $html .= '</div>';
     $html .= '</div>';
