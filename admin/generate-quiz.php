@@ -375,10 +375,18 @@ if (!defined('ABSPATH')) {
                     <div class="form-row">
                         <div class="form-group">
                             <label for="exercise_sections">Nombre de Sections</label>
-                            <input type="number" id="exercise_sections" name="exercise_sections" value="5" min="3" max="15">
-                            <small class="form-help">Nombre d'étapes principales de l'exercice (3-15)</small>
+                            <input type="number" id="exercise_sections" name="exercise_sections" value="3" min="1" max="15">
+                            <small class="form-help">Nombre d'étapes principales de l'exercice (1-15)</small>
                         </div>
 
+                        <div class="form-group">
+                            <label for="exercise_lessons_per_section">Leçons par Section</label>
+                            <input type="number" id="exercise_lessons_per_section" name="exercise_lessons_per_section" value="3" min="1" max="10">
+                            <small class="form-help">Nombre de leçons par section (1-10)</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="exercise_complexity">Niveau de Complexité</label>
                             <select id="exercise_complexity" name="exercise_complexity">
@@ -388,6 +396,15 @@ if (!defined('ABSPATH')) {
                                 <option value="expert">Expert</option>
                             </select>
                             <small class="form-help">Niveau de difficulté de l'exercice</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="exercise_language">Langue du Contenu</label>
+                            <select id="exercise_language" name="exercise_language">
+                                <option value="french" selected>Français</option>
+                                <option value="english">English</option>
+                            </select>
+                            <small class="form-help">Langue de génération du contenu du cours</small>
                         </div>
                     </div>
 

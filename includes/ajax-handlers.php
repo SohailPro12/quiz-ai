@@ -494,7 +494,9 @@ class QuizGeneratorAjax
             // Get form data
             $exercise_title = sanitize_text_field($_POST['exercise_title'] ?? '');
             $exercise_description = sanitize_textarea_field($_POST['exercise_description'] ?? '');
-            $exercise_sections = intval($_POST['exercise_sections'] ?? 5);
+            $exercise_sections = intval($_POST['exercise_sections'] ?? 3);
+            $exercise_lessons_per_section = intval($_POST['exercise_lessons_per_section'] ?? 3);
+            $exercise_language = sanitize_text_field($_POST['exercise_language'] ?? 'french');
             $exercise_complexity = sanitize_text_field($_POST['exercise_complexity'] ?? 'intermediate');
             $exercise_type = sanitize_text_field($_POST['exercise_type'] ?? 'project');
             $exercise_tools = sanitize_text_field($_POST['exercise_tools'] ?? '');
@@ -510,6 +512,8 @@ class QuizGeneratorAjax
             error_log('[EXERCISE_AI] Configuration: ' . json_encode([
                 'title' => $exercise_title,
                 'sections' => $exercise_sections,
+                'lessons_per_section' => $exercise_lessons_per_section,
+                'language' => $exercise_language,
                 'complexity' => $exercise_complexity,
                 'type' => $exercise_type,
                 'courses' => count($selected_courses),
@@ -521,6 +525,8 @@ class QuizGeneratorAjax
                 $exercise_title,
                 $exercise_description,
                 $exercise_sections,
+                $exercise_lessons_per_section,
+                $exercise_language,
                 $exercise_complexity,
                 $exercise_type,
                 $exercise_tools,
@@ -560,13 +566,13 @@ class QuizGeneratorAjax
     /**
      * Generate practical exercise content using AI
      */
-    private function generate_exercise_content($title, $description, $sections, $complexity, $type, $tools, $courses, $categories)
+    private function generate_exercise_content($title, $description, $sections, $lessons_per_section, $language, $complexity, $type, $tools, $courses, $categories)
     {
         // Get course content for context
         $course_content = $this->get_course_content_for_exercise($courses, $categories);
 
         // Build AI prompt
-        $prompt = $this->build_exercise_ai_prompt($title, $description, $sections, $complexity, $type, $tools, $course_content);
+        $prompt = $this->build_exercise_ai_prompt($title, $description, $sections, $lessons_per_section, $language, $complexity, $type, $tools, $course_content);
 
         // Call AI service
         $ai_response = $this->call_ai_for_exercise($prompt);
@@ -630,7 +636,7 @@ class QuizGeneratorAjax
     /**
      * Build AI prompt for exercise generation
      */
-    private function build_exercise_ai_prompt($title, $description, $sections, $complexity, $type, $tools, $course_content)
+    private function build_exercise_ai_prompt($title, $description, $sections, $lessons_per_section, $language, $complexity, $type, $tools, $course_content)
     {
         $complexity_map = [
             'beginner' => 'débutant',
@@ -648,32 +654,111 @@ class QuizGeneratorAjax
             'hands_on' => 'pratique dirigée'
         ];
 
+        // Language configuration
+        $language_config = [
+            'french' => [
+                'lang_name' => 'français',
+                'generate_instruction' => 'Générez un exercice pratique détaillé',
+                'language_note' => 'LANGUE: Tout le contenu doit être généré en français.',
+            ],
+            'english' => [
+                'lang_name' => 'English',
+                'generate_instruction' => 'Generate a detailed practical exercise',
+                'language_note' => 'LANGUAGE: All content must be generated in English.',
+            ]
+        ];
+
+        $lang = $language_config[$language] ?? $language_config['french'];
         $content_summary = '';
         if (!empty($course_content)) {
-            $content_summary = "Contenu des cours de référence :\n";
+            $content_summary = ($language === 'english' ? "Reference course content:\n" : "Contenu des cours de référence :\n");
             foreach (array_slice($course_content, 0, 5) as $content) {
                 $content_summary .= "- {$content['title']}: " . substr(strip_tags($content['content']), 0, 200) . "...\n";
             }
         }
 
-        return "Générez un exercice pratique détaillé avec les spécifications suivantes :
+        $total_lessons = $sections * $lessons_per_section;
+
+        if ($language === 'english') {
+            return "Generate a detailed practical exercise with the following specifications:
+
+TITLE: {$title}
+DESCRIPTION: {$description}
+NUMBER OF STEPS: {$sections}
+LESSONS PER STEP: {$lessons_per_section} (Total: {$total_lessons} lessons)
+LEVEL: " . ($complexity_map[$complexity] ?? $complexity) . "
+TYPE: " . ($type_map[$type] ?? $type) . "
+TOOLS: {$tools}
+{$lang['language_note']}
+
+{$content_summary}
+
+Create a structured practical exercise with:
+1. A clear introduction explaining the objective
+2. EXACTLY {$sections} detailed steps, each containing EXACTLY {$lessons_per_section} specific lessons
+3. Concrete examples and suggested screenshots
+4. Tips and best practices adapted to the {$complexity} level
+5. Validation points for each step
+6. A conclusion with key learnings
+
+IMPORTANT: 
+- Generate {$sections} separate steps
+- Each step must contain exactly {$lessons_per_section} detailed sub-lessons
+- Total lessons: {$total_lessons}
+- ALL CONTENT MUST BE IN ENGLISH
+
+JSON response format:
+{
+    \"title\": \"Exercise title\",
+    \"section_name\": \"Section name (e.g., 'Hands-on Practice', 'Guided Exercises', 'Creation Steps')\",
+    \"section_description\": \"Short section description to explain its content\",
+    \"introduction\": \"Detailed introduction\",
+    \"lessons_per_section\": {$lessons_per_section},
+    \"steps\": [
+        {
+            \"title\": \"Step title\",
+            \"content\": \"Detailed step content\",
+            \"lessons\": [
+                {
+                    \"title\": \"Lesson title\",
+                    \"content\": \"Detailed lesson content\",
+                    \"instructions\": [\"Instruction 1\", \"Instruction 2\"],
+                    \"tips\": [\"Tip 1\", \"Tip 2\"]
+                }
+            ],
+            \"validation\": \"Validation point for the step\"
+        }
+    ],
+    \"conclusion\": \"Conclusion with key learnings\",
+    \"resources\": [\"Resource 1\", \"Resource 2\"]
+}";
+        } else {
+            return "Générez un exercice pratique détaillé avec les spécifications suivantes :
 
 TITRE: {$title}
 DESCRIPTION: {$description}
 NOMBRE D'ÉTAPES: {$sections}
+LEÇONS PAR ÉTAPE: {$lessons_per_section} (Total: {$total_lessons} leçons)
 NIVEAU: " . ($complexity_map[$complexity] ?? $complexity) . "
 TYPE: " . ($type_map[$type] ?? $type) . "
 OUTILS: {$tools}
+{$lang['language_note']}
 
 {$content_summary}
 
 Créez un exercice pratique structuré avec :
 1. Une introduction claire expliquant l'objectif
-2. {$sections} étapes détaillées avec instructions précises
+2. EXACTEMENT {$sections} étapes détaillées, chacune contenant EXACTEMENT {$lessons_per_section} leçons spécifiques
 3. Des exemples concrets et des captures d'écran suggérées
-4. Des conseils et bonnes pratiques
+4. Des conseils et bonnes pratiques adaptés au niveau {$complexity}
 5. Des points de validation pour chaque étape
 6. Une conclusion avec les apprentissages clés
+
+IMPORTANT: 
+- Générez {$sections} étapes (steps) séparées
+- Chaque étape doit contenir exactement {$lessons_per_section} sous-leçons détaillées
+- Total des leçons: {$total_lessons}
+- TOUT LE CONTENU DOIT ÊTRE EN FRANÇAIS
 
 Format de réponse JSON :
 {
@@ -681,18 +766,26 @@ Format de réponse JSON :
     \"section_name\": \"Nom de la section (ex: 'Mise en pratique', 'Exercices dirigés', 'Étapes de création')\",
     \"section_description\": \"Description courte de la section pour expliquer son contenu\",
     \"introduction\": \"Introduction détaillée\",
+    \"lessons_per_section\": {$lessons_per_section},
     \"steps\": [
         {
             \"title\": \"Titre de l'étape\",
-            \"content\": \"Contenu détaillé\",
-            \"instructions\": [\"Instruction 1\", \"Instruction 2\"],
-            \"tips\": [\"Conseil 1\", \"Conseil 2\"],
-            \"validation\": \"Point de validation\"
+            \"content\": \"Contenu détaillé de l'étape\",
+            \"lessons\": [
+                {
+                    \"title\": \"Titre de la leçon\",
+                    \"content\": \"Contenu détaillé de la leçon\",
+                    \"instructions\": [\"Instruction 1\", \"Instruction 2\"],
+                    \"tips\": [\"Tip 1\", \"Tip 2\"]
+                }
+            ],
+            \"validation\": \"Validation point for the step\"
         }
     ],
-    \"conclusion\": \"Conclusion avec apprentissages\",
-    \"resources\": [\"Ressource 1\", \"Ressource 2\"]
+    \"conclusion\": \"Conclusion with key learnings\",
+    \"resources\": [\"Resource 1\", \"Resource 2\"]
 }";
+        }
     }
 
     /**
@@ -849,87 +942,129 @@ Format de réponse JSON :
         $lesson_ids = [];
 
         if (isset($exercise_content['steps']) && is_array($exercise_content['steps'])) {
-            // Generate section name and description from exercise content
-            $section_name = isset($exercise_content['section_name']) ?
-                $exercise_content['section_name'] :
-                'Étapes - ' . substr($exercise_content['title'], 0, 50);
-
-            $section_description = isset($exercise_content['section_description']) ?
-                $exercise_content['section_description'] :
-                $exercise_content['description'];
-
-            // Create a section in the LearnPress sections table
             global $wpdb;
             $sections_table = $wpdb->prefix . 'learnpress_sections';
 
-            $section_result = $wpdb->insert(
-                $sections_table,
-                [
-                    'section_name' => $section_name,
-                    'section_course_id' => $course_id,
-                    'section_order' => 1,
-                    'section_description' => $section_description
-                ],
-                ['%s', '%d', '%d', '%s']
-            );
+            // Create separate sections for each step
+            foreach ($exercise_content['steps'] as $step_index => $step) {
+                // Generate section name from step
+                $section_name = 'Section ' . ($step_index + 1) . ': ' . $step['title'];
+                $section_description = isset($step['content']) ?
+                    substr(strip_tags($step['content']), 0, 200) : '';
 
-            $section_id = $wpdb->insert_id;
-            error_log('[EXERCISE_AI] Created section in LearnPress table with ID: ' . $section_id . ', Name: ' . $section_name);
+                // Create a section in the LearnPress sections table
+                $section_result = $wpdb->insert(
+                    $sections_table,
+                    [
+                        'section_name' => $section_name,
+                        'section_course_id' => $course_id,
+                        'section_order' => ($step_index + 1),
+                        'section_description' => $section_description
+                    ],
+                    ['%s', '%d', '%d', '%s']
+                );
 
-            // Create lessons and add them to the section
-            foreach ($exercise_content['steps'] as $index => $step) {
-                $lesson_data = [
-                    'post_title' => $step['title'],
-                    'post_content' => $this->format_step_content($step),
-                    'post_status' => 'publish',
-                    'post_type' => 'lp_lesson',
-                    'post_author' => get_current_user_id(),
-                    'post_parent' => $course_id
-                ];
+                $section_id = $wpdb->insert_id;
+                $section_lesson_ids = [];
 
-                $lesson_id = wp_insert_post($lesson_data);
+                error_log('[EXERCISE_AI] Created section ' . ($step_index + 1) . ' with ID: ' . $section_id . ', Name: ' . $section_name);
 
-                if ($lesson_id && !is_wp_error($lesson_id)) {
-                    // Set lesson meta data
-                    update_post_meta($lesson_id, '_lp_course', $course_id);
-                    update_post_meta($lesson_id, '_lp_duration', '10');
-                    update_post_meta($lesson_id, '_lp_preview', 'no');
+                // Create lessons for this section
+                if (isset($step['lessons']) && is_array($step['lessons'])) {
+                    // Create individual lessons from the lessons array
+                    foreach ($step['lessons'] as $lesson_index => $lesson) {
+                        $lesson_data = [
+                            'post_title' => $lesson['title'],
+                            'post_content' => $this->format_lesson_content($lesson, $step),
+                            'post_status' => 'publish',
+                            'post_type' => 'lp_lesson',
+                            'post_author' => get_current_user_id(),
+                            'post_parent' => $course_id
+                        ];
 
-                    $lesson_ids[] = $lesson_id;
+                        $lesson_id = wp_insert_post($lesson_data);
 
-                    // Add lesson to section in LearnPress section items table
-                    $section_items_table = $wpdb->prefix . 'learnpress_section_items';
-                    $wpdb->insert(
-                        $section_items_table,
-                        [
-                            'section_id' => $section_id,
-                            'item_id' => $lesson_id,
-                            'item_type' => 'lp_lesson',
-                            'item_order' => $index + 1
-                        ],
-                        ['%d', '%d', '%s', '%d']
-                    );
+                        if ($lesson_id && !is_wp_error($lesson_id)) {
+                            // Set lesson meta data
+                            update_post_meta($lesson_id, '_lp_course', $course_id);
+                            update_post_meta($lesson_id, '_lp_duration', '10');
+                            update_post_meta($lesson_id, '_lp_preview', 'no');
 
-                    error_log('[EXERCISE_AI] Created lesson ' . ($index + 1) . ' with ID: ' . $lesson_id . ' and added to section');
+                            $lesson_ids[] = $lesson_id;
+                            $section_lesson_ids[] = $lesson_id;
+
+                            // Add lesson to section in LearnPress section items table
+                            $section_items_table = $wpdb->prefix . 'learnpress_section_items';
+                            $wpdb->insert(
+                                $section_items_table,
+                                [
+                                    'section_id' => $section_id,
+                                    'item_id' => $lesson_id,
+                                    'item_type' => 'lp_lesson',
+                                    'item_order' => ($lesson_index + 1)
+                                ],
+                                ['%d', '%d', '%s', '%d']
+                            );
+
+                            error_log('[EXERCISE_AI] Created lesson "' . $lesson['title'] . '" with ID: ' . $lesson_id . ' in section ' . ($step_index + 1));
+                        }
+                    }
+                } else {
+                    // Fallback: create lesson from step directly (for backward compatibility)
+                    $lesson_data = [
+                        'post_title' => $step['title'],
+                        'post_content' => $this->format_step_content($step),
+                        'post_status' => 'publish',
+                        'post_type' => 'lp_lesson',
+                        'post_author' => get_current_user_id(),
+                        'post_parent' => $course_id
+                    ];
+
+                    $lesson_id = wp_insert_post($lesson_data);
+
+                    if ($lesson_id && !is_wp_error($lesson_id)) {
+                        // Set lesson meta data
+                        update_post_meta($lesson_id, '_lp_course', $course_id);
+                        update_post_meta($lesson_id, '_lp_duration', '10');
+                        update_post_meta($lesson_id, '_lp_preview', 'no');
+
+                        $lesson_ids[] = $lesson_id;
+                        $section_lesson_ids[] = $lesson_id;
+
+                        // Add lesson to section in LearnPress section items table
+                        $section_items_table = $wpdb->prefix . 'learnpress_section_items';
+                        $wpdb->insert(
+                            $section_items_table,
+                            [
+                                'section_id' => $section_id,
+                                'item_id' => $lesson_id,
+                                'item_type' => 'lp_lesson',
+                                'item_order' => 1
+                            ],
+                            ['%d', '%d', '%s', '%d']
+                        );
+
+                        error_log('[EXERCISE_AI] Created step lesson with ID: ' . $lesson_id . ' in section ' . ($step_index + 1));
+                    }
                 }
-            }
 
-            // Create curriculum structure for meta storage
-            if ($section_id && !empty($lesson_ids)) {
-                $section_items = [];
-                foreach ($lesson_ids as $index => $lesson_id) {
-                    $section_items[] = [
-                        'id' => intval($lesson_id),
-                        'type' => 'lp_lesson'
+                // Create curriculum structure for this section
+                if ($section_id && !empty($section_lesson_ids)) {
+                    $section_items = [];
+                    foreach ($section_lesson_ids as $lesson_id) {
+                        $section_items[] = [
+                            'id' => intval($lesson_id),
+                            'type' => 'lp_lesson'
+                        ];
+                    }
+
+                    $curriculum[] = [
+                        'id' => $section_id,
+                        'type' => 'section',
+                        'title' => $section_name,
+                        'items' => $section_items
                     ];
                 }
-
-                $curriculum[] = [
-                    'id' => $section_id,
-                    'type' => 'section',
-                    'title' => $section_name,
-                    'items' => $section_items
-                ];
             }
         }
 
@@ -937,9 +1072,9 @@ Format de réponse JSON :
         if (!empty($curriculum)) {
             update_post_meta($course_id, '_lp_curriculum', $curriculum);
             update_post_meta($course_id, '_lp_lessons', count($lesson_ids));
-            update_post_meta($course_id, '_lp_sections', 1);
+            update_post_meta($course_id, '_lp_sections', count($curriculum));
 
-            error_log('[EXERCISE_AI] Saved curriculum with 1 section and ' . count($lesson_ids) . ' lessons');
+            error_log('[EXERCISE_AI] Saved curriculum with ' . count($curriculum) . ' sections and ' . count($lesson_ids) . ' lessons');
             error_log('[EXERCISE_AI] Final curriculum structure: ' . json_encode($curriculum));
         } else {
             error_log('[EXERCISE_AI] No curriculum to save - no lessons created');
@@ -948,6 +1083,8 @@ Format de réponse JSON :
         // Set course metadata for LearnPress compatibility
         update_post_meta($course_id, '_quiz_ai_exercise_type', 'practical');
         update_post_meta($course_id, '_quiz_ai_exercise_data', $exercise_content);
+        update_post_meta($course_id, '_quiz_ai_design_template', $exercise_content['design_template'] ?? 'current');
+        update_post_meta($course_id, '_quiz_ai_lessons_per_section', $exercise_content['lessons_per_section'] ?? 3);
 
         // Essential LearnPress course meta data
         update_post_meta($course_id, '_lp_duration', '0');
@@ -1038,6 +1175,70 @@ Format de réponse JSON :
         $content .= "<div style='font-size: 48px; margin-bottom: 10px;'>📷</div>";
         $content .= "<div style='font-size: 14px;'>Emplacement pour capture d'écran / image d'exemple</div>";
         $content .= "<div style='font-size: 12px; margin-top: 5px;'>Ajoutez ici une image illustrant cette étape</div>";
+        $content .= "</div>";
+
+        $content .= "</div>";
+
+        return $content;
+    }
+
+    /**
+     * Format lesson content for individual lessons within steps
+     */
+    private function format_lesson_content($lesson, $parent_step)
+    {
+        $content = "<div class='exercise-lesson-content' style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>";
+
+        // Parent step context (smaller, at top)
+        $content .= "<div class='lesson-context' style='background: #e8f4f8; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 3px solid #007cba;'>";
+        $content .= "<div style='font-size: 14px; color: #666; margin-bottom: 5px;'>Étape parente :</div>";
+        $content .= "<div style='font-size: 16px; font-weight: 500; color: #007cba;'>" . $parent_step['title'] . "</div>";
+        $content .= "</div>";
+
+        // Main lesson content
+        $content .= "<div class='lesson-description' style='background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #28a745;'>";
+        $content .= "<div style='font-size: 16px;'>" . $lesson['content'] . "</div>";
+        $content .= "</div>";
+
+        // Instructions section with lesson-specific styling
+        if (!empty($lesson['instructions'])) {
+            $content .= "<div style='background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px;'>";
+            $content .= "<h4 style='color: #28a745; margin: 0 0 15px 0; display: flex; align-items: center;'>";
+            $content .= "<span style='background: #28a745; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; margin-right: 10px;'>📝</span>";
+            $content .= "Instructions :</h4>";
+            $content .= "<ul style='list-style: none; padding: 0; margin: 0;'>";
+            foreach ($lesson['instructions'] as $index => $instruction) {
+                $content .= "<li style='padding: 8px 0; border-bottom: 1px solid #eee; display: flex; align-items: flex-start;'>";
+                $content .= "<span style='background: #28a745; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; margin-right: 10px; flex-shrink: 0;'>" . ($index + 1) . "</span>";
+                $content .= "<span>" . $instruction . "</span>";
+                $content .= "</li>";
+            }
+            $content .= "</ul>";
+            $content .= "</div>";
+        }
+
+        // Tips section specific to this lesson
+        if (!empty($lesson['tips'])) {
+            $content .= "<div style='background: #fffbf0; border: 1px solid #f0c33c; border-radius: 8px; padding: 20px; margin-bottom: 20px;'>";
+            $content .= "<h4 style='color: #f0c33c; margin: 0 0 15px 0; display: flex; align-items: center;'>";
+            $content .= "<span style='background: #f0c33c; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; margin-right: 10px;'>💡</span>";
+            $content .= "Conseils :</h4>";
+            $content .= "<ul style='list-style: none; padding: 0; margin: 0;'>";
+            foreach ($lesson['tips'] as $tip) {
+                $content .= "<li style='padding: 8px 0; border-bottom: 1px solid #f5d982; display: flex; align-items: flex-start;'>";
+                $content .= "<span style='color: #f0c33c; margin-right: 10px; flex-shrink: 0;'>💡</span>";
+                $content .= "<span>" . $tip . "</span>";
+                $content .= "</li>";
+            }
+            $content .= "</ul>";
+            $content .= "</div>";
+        }
+
+        // Lesson-specific image placeholder
+        $content .= "<div style='background: #f8f9fa; border: 2px dashed #ddd; border-radius: 8px; padding: 30px; text-align: center; margin: 20px 0; color: #666;'>";
+        $content .= "<div style='font-size: 40px; margin-bottom: 8px;'>🎯</div>";
+        $content .= "<div style='font-size: 14px;'>Emplacement pour image spécifique à cette leçon</div>";
+        $content .= "<div style='font-size: 12px; margin-top: 5px;'>Ajoutez ici une capture d'écran illustrant cette leçon</div>";
         $content .= "</div>";
 
         $content .= "</div>";
@@ -2058,12 +2259,6 @@ Format de réponse JSON :
             // Save answers
             // error_log('[QUIZ_AI] Sauvegarde des réponses pour question ID: ' . $question_id);
             // error_log('[QUIZ_AI] Nombre de réponses: ' . count($question_data['answers']));
-
-            // For text, essay, and open questions, don't save answers as they will be evaluated by AI
-            if ($question_data['type'] === 'text' || $question_data['type'] === 'essay' || $question_data['type'] === 'open') {
-                // error_log('[QUIZ_AI] Question de type ' . $question_data['type'] . ' - pas de réponses à sauvegarder (évaluation IA)');
-                continue;
-            }
 
             foreach ($question_data['answers'] as $answer_index => $answer_data) {
                 $answer = array(
